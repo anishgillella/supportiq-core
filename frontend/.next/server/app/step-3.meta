@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(onboarding)/layout,_N_T_/(onboarding)/step-3/layout,_N_T_/(onboarding)/step-3/page,_N_T_/step-3"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KG9uYm9hcmRpbmcp/step-3/__PAGE__",
+    "/!KG9uYm9hcmRpbmcp/step-3",
+    "/!KG9uYm9hcmRpbmcp",
+    "/_index",
+    "/_head"
+  ]
+}

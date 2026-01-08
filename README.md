@@ -353,7 +353,124 @@ With a focused MVP timeline of 12 weeks and a lean founding team of 4 engineers,
 
 ## Getting Started
 
-For detailed information on the technical exercise implementation (Sections 1-3), please refer to the `/exercise` directory documentation.
+### Prerequisites
+
+- Node.js 18+
+- Python 3.11+
+- Supabase account (free tier works)
+
+### 1. Environment Setup
+
+Create a `.env` file in the root folder:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your credentials:
+```
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-anon-key
+SUPABASE_SERVICE_KEY=your-service-role-key
+JWT_SECRET_KEY=your-super-secret-key
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+FRONTEND_URL=http://localhost:3000
+```
+
+### 2. Set Up Supabase Database
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to SQL Editor and run the schema from `backend/schema.sql`
+3. Copy your project URL and API keys from Settings > API into `.env`
+
+### 3. Backend Setup
+
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+uvicorn app.main:app --reload --port 8000
+```
+
+### 4. Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+### 5. Access the Application
+
+- **Onboarding Wizard**: http://localhost:3000
+- **Admin Panel**: http://localhost:3000/admin
+- **Data Table**: http://localhost:3000/data
+- **API Docs**: http://localhost:8000/docs
+
+---
+
+## Project Structure
+
+```
+palenque/
+├── frontend/                 # Next.js 16 application
+│   ├── app/                  # App router pages
+│   │   ├── (onboarding)/     # Wizard steps 1-3
+│   │   ├── admin/            # Admin configuration
+│   │   ├── complete/         # Success page
+│   │   └── data/             # Data table
+│   ├── components/           # React components
+│   │   ├── ui/               # Base UI (Button, Input, Card)
+│   │   └── onboarding/       # Wizard components
+│   ├── lib/                  # Utilities, API client, validations
+│   └── stores/               # Zustand state management
+│
+└── backend/                  # FastAPI application
+    ├── app/
+    │   ├── api/v1/           # API endpoints
+    │   ├── core/             # Config, security, database
+    │   └── models/           # Pydantic models
+    ├── schema.sql            # Database schema
+    └── requirements.txt
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, TypeScript, Tailwind CSS |
+| UI | Custom components with Framer Motion |
+| Forms | React Hook Form + Zod validation |
+| State | Zustand with persistence |
+| Backend | Python FastAPI |
+| Auth | JWT with Argon2 password hashing |
+| Database | Supabase (PostgreSQL) |
+
+---
+
+## Features
+
+- Dark minimal UI with smooth animations
+- 3-step onboarding wizard with progress persistence
+- Dynamic form components (About Me, Address, Birthdate)
+- Admin panel to configure wizard pages
+- Data table with real-time updates
+- Confetti celebration on completion
+
+---
 
 **Contact**: For questions regarding this exercise, please reach out to:
 - David Oliver (david.oliver@revolutionventurestudios.com)
@@ -362,5 +479,5 @@ For detailed information on the technical exercise implementation (Sections 1-3)
 ---
 
 *Last Updated: January 8, 2026*
-*Status: MVP Roadmap - Ready for Engineering Implementation*
+*Status: Technical Exercise - Implementation Complete*
 
