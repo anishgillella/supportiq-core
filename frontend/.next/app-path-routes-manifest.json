@@ -1,0 +1,10 @@
+{
+  "/(onboarding)/page": "/",
+  "/(onboarding)/step-2/page": "/step-2",
+  "/(onboarding)/step-3/page": "/step-3",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/admin/page": "/admin",
+  "/complete/page": "/complete",
+  "/data/page": "/data"
+}
