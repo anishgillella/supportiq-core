@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from app.models.user import ProgressUpdate, ProgressResponse, ProfileResponse
 from app.core.security import get_current_user, TokenData
-from app.core.database import get_supabase
+from app.core.database import get_supabase_admin
 
 router = APIRouter(prefix="/progress", tags=["Onboarding Progress"])
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/progress", tags=["Onboarding Progress"])
 @router.get("", response_model=ProgressResponse)
 async def get_progress(current_user: TokenData = Depends(get_current_user)):
     """Get user's current onboarding progress and profile data"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     # Get user data
     user_result = (
@@ -59,7 +59,7 @@ async def update_progress(
     data: ProgressUpdate, current_user: TokenData = Depends(get_current_user)
 ):
     """Update user's onboarding progress and profile data"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     # Update user's current step
     supabase.table("users").update({"current_step": data.step}).eq(
@@ -105,7 +105,7 @@ async def update_progress(
 @router.post("/complete", response_model=dict)
 async def complete_onboarding(current_user: TokenData = Depends(get_current_user)):
     """Mark onboarding as complete"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     supabase.table("users").update({"onboarding_completed": True}).eq(
         "id", current_user.user_id

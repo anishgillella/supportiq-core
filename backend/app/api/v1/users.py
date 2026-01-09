@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from typing import List
 from app.models.user import UserWithProfileResponse, ProfileResponse
-from app.core.database import get_supabase
+from app.core.database import get_supabase_admin
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.get("", response_model=List[UserWithProfileResponse])
 async def get_all_users():
     """Get all users with their profiles (public endpoint for data table)"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     # Get all users
     users_result = (
