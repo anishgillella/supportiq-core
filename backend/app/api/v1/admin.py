@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from app.models.config import PageConfig, ConfigResponse
-from app.core.database import get_supabase
+from app.core.database import get_supabase_admin
 
 router = APIRouter(prefix="/admin", tags=["Admin Configuration"])
 
@@ -11,7 +11,7 @@ VALID_COMPONENTS = {"aboutMe", "address", "birthdate"}
 @router.get("/config", response_model=ConfigResponse)
 async def get_config():
     """Get current onboarding page configuration"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     result = (
         supabase.table("onboarding_config")
@@ -74,7 +74,7 @@ async def update_config(config: PageConfig):
             detail="Page 3 can have at most 2 components",
         )
 
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     # Clear existing config
     supabase.table("onboarding_config").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()

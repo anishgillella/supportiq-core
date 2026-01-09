@@ -1,5 +1,31 @@
 # SupportIQ - AI-Powered Customer Service Platform
 
+## Quick Start
+
+### Run Backend
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+### Run Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Access Points
+- **App**: http://localhost:3000
+- **Admin**: http://localhost:3000/admin
+- **Data**: http://localhost:3000/data
+- **API Docs**: http://localhost:8000/docs
+
+---
+
 ## Executive Summary
 
 SupportIQ is a revolutionary AI-driven customer service automation platform that transforms how businesses handle customer interactions. By leveraging advanced natural language processing (NLP) and machine learning algorithms, SupportIQ automates customer service responses across multiple channels—including phone, chat, and email—while maintaining exceptional quality standards and enabling continuous improvement through real-time performance analytics.

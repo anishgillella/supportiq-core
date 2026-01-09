@@ -7,7 +7,7 @@ from app.core.security import (
     get_current_user,
     TokenData,
 )
-from app.core.database import get_supabase
+from app.core.database import get_supabase_admin
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register", response_model=TokenResponse)
 async def register(user_data: UserRegister):
     """Register a new user and return JWT token"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     # Check if user already exists
     existing = supabase.table("users").select("id").eq("email", user_data.email).execute()
@@ -61,7 +61,7 @@ async def register(user_data: UserRegister):
 @router.post("/login", response_model=TokenResponse)
 async def login(user_data: UserLogin):
     """Authenticate user and return JWT token"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     # Find user by email
     result = (
@@ -95,7 +95,7 @@ async def login(user_data: UserLogin):
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: TokenData = Depends(get_current_user)):
     """Get current authenticated user"""
-    supabase = get_supabase()
+    supabase = get_supabase_admin()
 
     result = (
         supabase.table("users")
