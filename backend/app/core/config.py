@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
 
     class Config:
-        env_file = "../.env"  # Root folder .env
+        env_file = "/Users/anishgillella/Desktop/Stuff/Projects/supportiq-core/.env"
         case_sensitive = False
         extra = "ignore"
 
