@@ -28,18 +28,20 @@ async def register(user_data: UserRegister):
     # Hash password and create user
     password_hash = get_password_hash(user_data.password)
 
-    result = (
-        supabase.table("users")
-        .insert(
-            {
-                "email": user_data.email,
-                "password_hash": password_hash,
-                "current_step": 1,
-                "onboarding_completed": False,
-            }
-        )
-        .execute()
-    )
+    user_record = {
+        "email": user_data.email,
+        "password_hash": password_hash,
+        "current_step": 1,
+        "onboarding_completed": False,
+    }
+
+    # Add company info if provided
+    if user_data.company_name:
+        user_record["company_name"] = user_data.company_name
+    if user_data.company_website:
+        user_record["company_website"] = user_data.company_website
+
+    result = supabase.table("users").insert(user_record).execute()
 
     if not result.data:
         raise HTTPException(
@@ -90,6 +92,16 @@ async def login(user_data: UserLogin):
     access_token = create_access_token(data={"sub": user["id"], "email": user["email"]})
 
     return TokenResponse(access_token=access_token, user_id=user["id"])
+
+
+@router.get("/check-email")
+async def check_email(email: str):
+    """Check if an email already exists in the system"""
+    supabase = get_supabase_admin()
+
+    existing = supabase.table("users").select("id").eq("email", email).execute()
+
+    return {"exists": len(existing.data) > 0}
 
 
 @router.get("/me", response_model=UserResponse)

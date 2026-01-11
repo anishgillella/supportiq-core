@@ -7,6 +7,18 @@ export const registrationSchema = z
       .string()
       .min(1, 'Email is required')
       .email('Please enter a valid email address'),
+    companyName: z
+      .string()
+      .min(1, 'Company name is required')
+      .max(100, 'Company name must be under 100 characters'),
+    companyWebsite: z
+      .string()
+      .min(1, 'Company website is required')
+      .url('Please enter a valid URL (e.g., https://example.com)')
+      .refine(
+        (url) => url.startsWith('http://') || url.startsWith('https://'),
+        { message: 'URL must start with http:// or https://' }
+      ),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')

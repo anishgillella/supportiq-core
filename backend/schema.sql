@@ -4,6 +4,9 @@
 -- ===========================================
 -- CLEAN UP: Drop existing tables if they exist
 -- ===========================================
+DROP TABLE IF EXISTS public.knowledge_chunks CASCADE;
+DROP TABLE IF EXISTS public.knowledge_documents CASCADE;
+DROP TABLE IF EXISTS public.conversations CASCADE;
 DROP TABLE IF EXISTS public.user_profiles CASCADE;
 DROP TABLE IF EXISTS public.users CASCADE;
 DROP TABLE IF EXISTS public.onboarding_config CASCADE;
@@ -12,11 +15,13 @@ DROP TABLE IF EXISTS public.onboarding_config CASCADE;
 -- CREATE TABLES
 -- ===========================================
 
--- Users table
+-- Users table (updated with company info)
 CREATE TABLE public.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
+  company_name VARCHAR(255),
+  company_website VARCHAR(500),
   current_step INTEGER DEFAULT 1,
   onboarding_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -48,6 +53,50 @@ CREATE TABLE public.onboarding_config (
 );
 
 -- ===========================================
+-- KNOWLEDGE BASE TABLES
+-- ===========================================
+
+-- Knowledge documents (PDFs, scraped pages, etc.)
+CREATE TABLE public.knowledge_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  title VARCHAR(500) NOT NULL,
+  source VARCHAR(1000) NOT NULL, -- URL or filename
+  source_type VARCHAR(50) NOT NULL CHECK (source_type IN ('website', 'pdf', 'text', 'docx')),
+  content TEXT, -- Original full content
+  metadata JSONB DEFAULT '{}',
+  chunks_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Knowledge chunks (for RAG retrieval)
+CREATE TABLE public.knowledge_chunks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id UUID REFERENCES public.knowledge_documents(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  chunk_index INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  embedding_id VARCHAR(255), -- Pinecone vector ID
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================================
+-- CONVERSATION TABLES
+-- ===========================================
+
+-- Conversations for chat history
+CREATE TABLE public.conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  title VARCHAR(255),
+  messages JSONB DEFAULT '[]', -- Array of {role, content, timestamp, sources}
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================================
 -- DEFAULT DATA
 -- ===========================================
 
@@ -64,6 +113,11 @@ INSERT INTO public.onboarding_config (page_number, component_type, display_order
 CREATE INDEX idx_users_email ON public.users(email);
 CREATE INDEX idx_profiles_user_id ON public.user_profiles(user_id);
 CREATE INDEX idx_config_page ON public.onboarding_config(page_number);
+CREATE INDEX idx_documents_user_id ON public.knowledge_documents(user_id);
+CREATE INDEX idx_chunks_document_id ON public.knowledge_chunks(document_id);
+CREATE INDEX idx_chunks_user_id ON public.knowledge_chunks(user_id);
+CREATE INDEX idx_chunks_embedding_id ON public.knowledge_chunks(embedding_id);
+CREATE INDEX idx_conversations_user_id ON public.conversations(user_id);
 
 -- ===========================================
 -- TRIGGERS FOR updated_at
@@ -87,22 +141,27 @@ CREATE TRIGGER update_profiles_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_documents_updated_at
+    BEFORE UPDATE ON public.knowledge_documents
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_conversations_updated_at
+    BEFORE UPDATE ON public.conversations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
 -- ===========================================
 -- PERMISSIONS
 -- ===========================================
 
 -- Grant permissions to Supabase roles
-GRANT ALL ON TABLE public.users TO service_role;
-GRANT ALL ON TABLE public.users TO anon;
-GRANT ALL ON TABLE public.users TO authenticated;
-
-GRANT ALL ON TABLE public.user_profiles TO service_role;
-GRANT ALL ON TABLE public.user_profiles TO anon;
-GRANT ALL ON TABLE public.user_profiles TO authenticated;
-
-GRANT ALL ON TABLE public.onboarding_config TO service_role;
-GRANT ALL ON TABLE public.onboarding_config TO anon;
-GRANT ALL ON TABLE public.onboarding_config TO authenticated;
+GRANT ALL ON TABLE public.users TO service_role, anon, authenticated;
+GRANT ALL ON TABLE public.user_profiles TO service_role, anon, authenticated;
+GRANT ALL ON TABLE public.onboarding_config TO service_role, anon, authenticated;
+GRANT ALL ON TABLE public.knowledge_documents TO service_role, anon, authenticated;
+GRANT ALL ON TABLE public.knowledge_chunks TO service_role, anon, authenticated;
+GRANT ALL ON TABLE public.conversations TO service_role, anon, authenticated;
 
 -- ===========================================
 -- ROW LEVEL SECURITY
@@ -112,3 +171,6 @@ GRANT ALL ON TABLE public.onboarding_config TO authenticated;
 ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.onboarding_config DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.knowledge_documents DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.knowledge_chunks DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;

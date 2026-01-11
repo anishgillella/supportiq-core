@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,9 @@ export default function Step1Registration() {
   const { setAuth, setStep, updateFormData, token, currentStep } = useOnboardingStore()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [emailExists, setEmailExists] = useState(false)
+  const [checkingEmail, setCheckingEmail] = useState(false)
+  const [scrapingStatus, setScrapingStatus] = useState<string | null>(null)
 
   const {
     register,
@@ -29,6 +33,38 @@ export default function Step1Registration() {
   })
 
   const password = watch('password')
+  const email = watch('email')
+
+  // Debounced email check
+  const checkEmailExists = useCallback(async (emailToCheck: string) => {
+    if (!emailToCheck || emailToCheck.length < 5 || !emailToCheck.includes('@')) {
+      setEmailExists(false)
+      return
+    }
+
+    setCheckingEmail(true)
+    try {
+      const result = await api.checkEmail(emailToCheck)
+      setEmailExists(result.exists)
+    } catch {
+      setEmailExists(false)
+    } finally {
+      setCheckingEmail(false)
+    }
+  }, [])
+
+  // Check email when it changes (with debounce)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (email && !errors.email) {
+        checkEmailExists(email)
+      } else {
+        setEmailExists(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [email, errors.email, checkEmailExists])
 
   // Redirect if already authenticated and past step 1
   useEffect(() => {
@@ -40,22 +76,37 @@ export default function Step1Registration() {
   const onSubmit = async (data: RegistrationFormData) => {
     setIsLoading(true)
     setError(null)
+    setScrapingStatus(null)
 
     try {
-      const response = await api.register(data.email, data.password)
+      // Register user with company info
+      const response = await api.register(
+        data.email,
+        data.password,
+        data.companyName,
+        data.companyWebsite
+      )
       setAuth(response.user_id, response.access_token)
       updateFormData({ email: data.email })
+
+      // Start knowledge base scraping in background
+      setScrapingStatus('Setting up your knowledge base...')
+      try {
+        await api.scrapeWebsite(response.access_token, data.companyWebsite)
+      } catch {
+        // Don't fail registration if scraping fails
+        console.warn('Website scraping failed, user can add documents later')
+      }
+
       setStep(2)
       router.push('/step-2')
     } catch (err) {
-      // If user already exists, try to login
       if (err instanceof Error && err.message.includes('already exists')) {
         try {
           const response = await api.login(data.email, data.password)
           setAuth(response.user_id, response.access_token)
           updateFormData({ email: data.email })
 
-          // Get current progress
           const progress = await api.getProgress(response.access_token)
           if (progress.onboarding_completed) {
             router.push('/complete')
@@ -64,13 +115,14 @@ export default function Step1Registration() {
             router.push(progress.current_step === 1 ? '/step-2' : `/step-${progress.current_step}`)
           }
         } catch (loginErr) {
-          setError(loginErr instanceof Error ? loginErr.message : 'Login failed')
+          setError('An account with this email already exists. Please use the correct password or try a different email.')
         }
       } else {
         setError(err instanceof Error ? err.message : 'Registration failed')
       }
     } finally {
       setIsLoading(false)
+      setScrapingStatus(null)
     }
   }
 
@@ -112,8 +164,46 @@ export default function Step1Registration() {
                 type="email"
                 placeholder="you@company.com"
                 error={errors.email?.message}
-                success={dirtyFields.email && !errors.email}
+                success={dirtyFields.email && !errors.email && !emailExists}
                 {...register('email')}
+              />
+              {emailExists && !errors.email && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-amber-500"
+                >
+                  An account with this email already exists.{' '}
+                  <Link href="/login" className="text-accent-primary hover:underline font-medium">
+                    Sign in instead
+                  </Link>
+                </motion.p>
+              )}
+              {checkingEmail && (
+                <p className="mt-1 text-xs text-text-muted">Checking email...</p>
+              )}
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Input
+                label="Company name"
+                type="text"
+                placeholder="Acme Inc."
+                error={errors.companyName?.message}
+                success={dirtyFields.companyName && !errors.companyName}
+                {...register('companyName')}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Input
+                label="Company website"
+                type="url"
+                placeholder="https://example.com"
+                error={errors.companyWebsite?.message}
+                success={dirtyFields.companyWebsite && !errors.companyWebsite}
+                hint="We'll analyze your website to build your AI knowledge base"
+                {...register('companyWebsite')}
               />
             </motion.div>
 
@@ -153,6 +243,20 @@ export default function Step1Registration() {
                 {error}
               </motion.div>
             )}
+
+            {scrapingStatus && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 rounded-lg bg-accent-primary/10 border border-accent-primary/20 text-accent-primary text-sm flex items-center gap-2"
+              >
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                {scrapingStatus}
+              </motion.div>
+            )}
           </motion.div>
         </CardContent>
 
@@ -162,12 +266,19 @@ export default function Step1Registration() {
             size="lg"
             className="w-full"
             isLoading={isLoading}
-            disabled={!isValid}
+            disabled={!isValid || emailExists}
           >
             {isLoading ? 'Creating account...' : 'Continue'}
           </Button>
 
           <p className="text-sm text-text-muted text-center">
+            Already have an account?{' '}
+            <Link href="/login" className="text-accent-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+
+          <p className="text-xs text-text-muted text-center">
             By continuing, you agree to our{' '}
             <a href="#" className="text-accent-primary hover:underline">
               Terms of Service
