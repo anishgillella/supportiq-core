@@ -7,6 +7,8 @@ from datetime import datetime
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
+    company_name: Optional[str] = None
+    company_website: Optional[str] = None
 
 
 class UserLogin(BaseModel):

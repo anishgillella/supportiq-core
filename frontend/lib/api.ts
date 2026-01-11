@@ -36,10 +36,76 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async register(email: string, password: string) {
+  async register(email: string, password: string, companyName?: string, companyWebsite?: string) {
     return this.request<{ access_token: string; user_id: string }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+        company_name: companyName,
+        company_website: companyWebsite
+      }),
+    })
+  }
+
+  // Knowledge base endpoints
+  async scrapeWebsite(token: string, websiteUrl: string) {
+    return this.request<{ success: boolean; documents_count: number }>('/knowledge/scrape', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ website_url: websiteUrl }),
+    })
+  }
+
+  async uploadDocument(token: string, file: File) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await fetch(`${this.baseUrl}/knowledge/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Upload failed' }))
+      throw new Error(error.detail || 'Upload failed')
+    }
+
+    return response.json()
+  }
+
+  async getKnowledgeBase(token: string) {
+    return this.request<{
+      documents: Array<{
+        id: string
+        title: string
+        source: string
+        chunks_count: number
+        created_at: string
+      }>
+    }>('/knowledge/documents', { token })
+  }
+
+  async deleteDocument(token: string, documentId: string) {
+    return this.request<{ success: boolean }>(`/knowledge/documents/${documentId}`, {
+      method: 'DELETE',
+      token,
+    })
+  }
+
+  // Chat endpoint
+  async chat(token: string, message: string, conversationId?: string) {
+    return this.request<{
+      response: string
+      conversation_id: string
+      sources: Array<{ title: string; chunk: string }>
+    }>('/chat', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ message, conversation_id: conversationId }),
     })
   }
 
@@ -54,6 +120,10 @@ class ApiClient {
     return this.request<{ id: string; email: string; current_step: number }>('/auth/me', {
       token,
     })
+  }
+
+  async checkEmail(email: string) {
+    return this.request<{ exists: boolean }>(`/auth/check-email?email=${encodeURIComponent(email)}`)
   }
 
   // Progress endpoints

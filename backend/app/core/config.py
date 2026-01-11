@@ -16,8 +16,23 @@ class Settings(BaseSettings):
     # CORS
     frontend_url: str = "http://localhost:3000"
 
+    # AI/LLM Configuration
+    openrouter_api_key: str = ""
+    openai_api_key: str = ""  # For embeddings
+    pinecone_api_key: str = ""
+    pinecone_host: str = "https://supportiq-h9p6mw5.svc.aped-4627-b74a.pinecone.io"
+    pinecone_index_name: str = "supportiq"
+
+    # Parallel AI (for website scraping)
+    parallel_api_key: str = ""
+
+    # Model settings
+    llm_model: str = "anthropic/claude-3.5-sonnet"  # OpenRouter model
+    embedding_model: str = "text-embedding-3-small"  # OpenAI embedding model
+    embedding_dimensions: int = 1024  # Must match Pinecone index dimensions
+
     class Config:
-        env_file = "../.env"  # Root folder .env
+        env_file = "/Users/anishgillella/Desktop/Stuff/Projects/supportiq-core/.env"
         case_sensitive = False
         extra = "ignore"
 

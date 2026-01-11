@@ -22,7 +22,36 @@ npm run dev
 - **App**: http://localhost:3000
 - **Admin**: http://localhost:3000/admin
 - **Data**: http://localhost:3000/data
+- **Chat**: http://localhost:3000/chat
+- **Knowledge Base**: http://localhost:3000/knowledge
 - **API Docs**: http://localhost:8000/docs
+
+### Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-anon-key
+SUPABASE_SERVICE_KEY=your-service-role-key
+
+# JWT Configuration
+JWT_SECRET_KEY=your-secure-random-secret
+
+# AI/LLM Configuration (for RAG chat)
+OPENROUTER_API_KEY=your-openrouter-key
+OPENAI_API_KEY=your-openai-key
+PINECONE_API_KEY=your-pinecone-key
+PINECONE_ENVIRONMENT=us-east-1
+PINECONE_INDEX_NAME=supportiq-knowledge
+
+# Parallel AI (for website scraping)
+PARALLEL_API_KEY=your-parallel-api-key
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+```
 
 ---
 
