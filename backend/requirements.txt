@@ -1,14 +1,28 @@
+# Web framework
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
+starlette==0.41.3
+
+# Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[argon2]==1.7.4
 argon2-cffi==23.1.0
+cryptography>=46.0.0
+
+# Supabase - pin compatible versions to avoid backtracking
 supabase==2.10.0
+httpx==0.27.2
+realtime==2.5.3
+gotrue>=2.10.0,<3.0.0
+postgrest>=0.18.0,<0.19
+storage3>=0.9.0,<0.10.0
+websockets>=15.0.0,<16.0.0
+
+# Configuration & Validation
 python-dotenv==1.0.1
 pydantic==2.10.3
 pydantic-settings==2.6.1
-httpx
-email-validator
+email-validator>=2.0.0
 
 # AI/ML dependencies
 openai>=1.0.0

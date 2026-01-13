@@ -1,5 +1,4 @@
 """Website scraping service using Parallel AI Task API"""
-import httpx
 from typing import List, Dict, Any
 from app.core.config import settings
 
@@ -54,78 +53,183 @@ async def scrape_website_with_parallel(website_url: str) -> Dict[str, Any]:
 
 async def scrape_website_simple(website_url: str) -> List[Dict[str, str]]:
     """
-    Scrape website using Parallel AI if available, fallback to simple HTTP scraping.
+    Scrape website using Parallel AI.
+    Raises an error if Parallel AI is not configured or fails.
     Returns list of page content dictionaries.
     """
-    pages = []
+    if not settings.parallel_api_key:
+        raise ValueError("Parallel AI API key not configured. Please set PARALLEL_API_KEY in your environment.")
 
-    # Try Parallel AI first
-    if settings.parallel_api_key:
-        try:
-            from parallel import Parallel
+    try:
+        from parallel import Parallel
 
-            client = Parallel(api_key=settings.parallel_api_key)
+        client = Parallel(api_key=settings.parallel_api_key)
 
-            # Create task to extract comprehensive company information
-            task_run = client.task_run.create(
-                input=f"Research the company at {website_url} and provide comprehensive information about their products, services, pricing, features, FAQs, and support policies.",
-                task_spec={
-                    "output_schema": {
-                        "type": "text"  # Get a comprehensive text report
+        # Create task to extract actual content from the website using thorough processor
+        task_run = client.task_run.create(
+            input=f"""Navigate to {website_url} and thoroughly extract ALL information from the website.
+
+Visit multiple pages including: homepage, products/services pages, about page, pricing page, FAQ page, support/help page, and any other important pages.
+
+Extract and document EVERYTHING you find including:
+- All product names, models, and variants
+- Detailed product descriptions and specifications
+- All features and capabilities
+- Pricing information (if available)
+- Company information and history
+- Customer support options and policies
+- FAQs and common questions
+- Contact information
+- Any other relevant content
+
+Be comprehensive - extract actual content from the website, not summaries.""",
+            task_spec={
+                "output_schema": {
+                    "type": "json",
+                    "json_schema": {
+                        "type": "object",
+                        "properties": {
+                            "company_name": {"type": "string", "description": "The name of the company"},
+                            "company_description": {"type": "string", "description": "Detailed description of the company, its mission, and what it does"},
+                            "products": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string", "description": "Product name"},
+                                        "category": {"type": "string", "description": "Product category"},
+                                        "description": {"type": "string", "description": "Detailed product description"},
+                                        "features": {"type": "string", "description": "Key features and specifications"},
+                                        "price": {"type": "string", "description": "Price or pricing information"},
+                                        "variants": {"type": "string", "description": "Different models or variants available"}
+                                    }
+                                },
+                                "description": "Complete list of all products found on the website"
+                            },
+                            "services": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "description": {"type": "string"},
+                                        "features": {"type": "string"}
+                                    }
+                                },
+                                "description": "Services offered by the company"
+                            },
+                            "pricing_info": {"type": "string", "description": "All pricing information, plans, and subscription details"},
+                            "faqs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "question": {"type": "string"},
+                                        "answer": {"type": "string"}
+                                    }
+                                },
+                                "description": "Frequently asked questions and answers"
+                            },
+                            "support_info": {"type": "string", "description": "Customer support options, policies, warranty info, return policies"},
+                            "contact_info": {"type": "string", "description": "Contact details - email, phone, address, social media"},
+                            "additional_content": {"type": "string", "description": "Any other important information from the website"}
+                        }
                     }
-                },
-                processor="lite-fast"
-            )
+                }
+            },
+            processor="core-fast"  # Use 'core-fast' processor for thorough but faster extraction
+        )
 
-            # Wait for result
-            run_result = client.task_run.result(task_run.run_id, api_timeout=120)
+        # Wait for result (longer timeout for thorough extraction)
+        run_result = client.task_run.result(task_run.run_id, api_timeout=300)
 
-            if run_result.output:
-                pages.append({
-                    "url": website_url,
-                    "title": f"Company Research: {website_url}",
-                    "content": run_result.output if isinstance(run_result.output, str) else str(run_result.output)
-                })
-                return pages
+        if not run_result.output:
+            raise ValueError(f"Parallel AI returned no content for {website_url}")
 
-        except Exception as e:
-            print(f"Parallel AI scraping failed: {e}, falling back to simple scraper")
+        # Convert structured output to text for embedding
+        output = run_result.output
+        if isinstance(output, dict):
+            # Build a comprehensive text from the structured data
+            content_parts = []
 
-    # Fallback to simple HTTP scraping
-    import re
-    from bs4 import BeautifulSoup
+            if output.get("company_name"):
+                content_parts.append(f"Company: {output['company_name']}")
 
-    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-        try:
-            response = await client.get(website_url)
-            response.raise_for_status()
+            if output.get("company_description"):
+                content_parts.append(f"\nAbout: {output['company_description']}")
 
-            soup = BeautifulSoup(response.text, 'html.parser')
+            # Products section
+            if output.get("products"):
+                content_parts.append("\n\n=== PRODUCTS ===")
+                for product in output["products"]:
+                    if isinstance(product, dict):
+                        content_parts.append(f"\nProduct: {product.get('name', 'Unknown Product')}")
+                        if product.get('category'):
+                            content_parts.append(f"Category: {product['category']}")
+                        if product.get('description'):
+                            content_parts.append(f"Description: {product['description']}")
+                        if product.get('features'):
+                            content_parts.append(f"Features: {product['features']}")
+                        if product.get('variants'):
+                            content_parts.append(f"Variants/Models: {product['variants']}")
+                        if product.get('price'):
+                            content_parts.append(f"Price: {product['price']}")
 
-            # Remove script and style elements
-            for element in soup(['script', 'style', 'nav', 'footer', 'header']):
-                element.decompose()
+            # Services section
+            if output.get("services"):
+                content_parts.append("\n\n=== SERVICES ===")
+                if isinstance(output["services"], list):
+                    for service in output["services"]:
+                        if isinstance(service, dict):
+                            content_parts.append(f"\nService: {service.get('name', 'Unknown Service')}")
+                            if service.get('description'):
+                                content_parts.append(f"Description: {service['description']}")
+                            if service.get('features'):
+                                content_parts.append(f"Features: {service['features']}")
+                else:
+                    content_parts.append(str(output["services"]))
 
-            # Get text content
-            text = soup.get_text(separator='\n', strip=True)
+            # Pricing section
+            if output.get("pricing_info"):
+                content_parts.append(f"\n\n=== PRICING ===\n{output['pricing_info']}")
 
-            # Clean up whitespace
-            text = re.sub(r'\n\s*\n', '\n\n', text)
-            text = re.sub(r' +', ' ', text)
+            # FAQs section
+            if output.get("faqs"):
+                content_parts.append("\n\n=== FREQUENTLY ASKED QUESTIONS ===")
+                if isinstance(output["faqs"], list):
+                    for faq in output["faqs"]:
+                        if isinstance(faq, dict):
+                            content_parts.append(f"\nQ: {faq.get('question', '')}")
+                            content_parts.append(f"A: {faq.get('answer', '')}")
+                else:
+                    content_parts.append(str(output["faqs"]))
 
-            # Get title
-            title = soup.title.string if soup.title else website_url
+            # Support section
+            if output.get("support_info"):
+                content_parts.append(f"\n\n=== SUPPORT & POLICIES ===\n{output['support_info']}")
 
-            pages.append({
-                "url": website_url,
-                "title": title,
-                "content": text[:50000]  # Limit content size
-            })
+            # Contact section
+            if output.get("contact_info"):
+                content_parts.append(f"\n\n=== CONTACT INFORMATION ===\n{output['contact_info']}")
 
-        except Exception as e:
-            print(f"Error scraping {website_url}: {e}")
+            # Additional content
+            if output.get("additional_content"):
+                content_parts.append(f"\n\n=== ADDITIONAL INFORMATION ===\n{output['additional_content']}")
 
-    return pages
+            content = "\n".join(content_parts)
+        else:
+            content = str(output)
+
+        return [{
+            "url": website_url,
+            "title": output.get("company_name", website_url) if isinstance(output, dict) else website_url,
+            "content": content
+        }]
+
+    except ImportError:
+        raise ValueError("Parallel AI library not installed. Please install with: pip install parallel-web")
+    except Exception as e:
+        raise ValueError(f"Parallel AI scraping failed: {str(e)}")
 
 
 def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[str]:

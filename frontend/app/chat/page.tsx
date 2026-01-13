@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Bot, User, Sparkles, FileText, Loader2 } from 'lucide-react'
+import { Send, Bot, User, Sparkles, FileText, Loader2, Database } from 'lucide-react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { api } from '@/lib/api'
 
@@ -78,15 +78,24 @@ export default function ChatPage() {
               <p className="text-xs text-text-muted">AI-powered support assistant</p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              setMessages([])
-              setConversationId(null)
-            }}
-            className="px-4 py-2 text-sm text-text-muted hover:text-text-primary transition-colors"
-          >
-            New Chat
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/knowledge')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-primary text-text-secondary hover:bg-bg-tertiary transition-colors text-sm"
+            >
+              <Database className="w-4 h-4" />
+              Knowledge Base
+            </button>
+            <button
+              onClick={() => {
+                setMessages([])
+                setConversationId(null)
+              }}
+              className="px-4 py-2 text-sm text-text-muted hover:text-text-primary transition-colors"
+            >
+              New Chat
+            </button>
+          </div>
         </div>
       </header>
 

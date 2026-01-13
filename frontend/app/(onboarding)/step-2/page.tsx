@@ -35,7 +35,7 @@ function buildSchema(components: ComponentType[]) {
 
 export default function Step2Page() {
   const router = useRouter()
-  const { token, currentStep, setStep, updateFormData, formData } = useOnboardingStore()
+  const { token, currentStep, setStep, updateFormData, formData, completeOnboarding } = useOnboardingStore()
   const { config, isLoading: configLoading } = useAdminConfig()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -122,6 +122,24 @@ export default function Step2Page() {
     router.push('/')
   }
 
+  const handleSkip = async () => {
+    if (!token) return
+
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      // Mark onboarding as complete and skip to dashboard
+      await api.completeOnboarding(token)
+      completeOnboarding()
+      router.push('/complete')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to skip')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (configLoading) {
     return (
       <Card>
@@ -199,11 +217,16 @@ export default function Step2Page() {
           </motion.div>
         </CardContent>
 
-        <CardFooter>
-          <Button type="button" variant="ghost" onClick={handleBack}>
-            Back
-          </Button>
-          <Button type="submit" isLoading={isSubmitting} disabled={!isValid}>
+        <CardFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button type="button" variant="ghost" onClick={handleBack}>
+              Back
+            </Button>
+            <Button type="button" variant="outline" onClick={handleSkip} disabled={isSubmitting}>
+              Skip to Dashboard
+            </Button>
+          </div>
+          <Button type="submit" isLoading={isSubmitting} disabled={!isValid} className="w-full sm:w-auto sm:ml-auto">
             {isSubmitting ? 'Saving...' : 'Continue'}
           </Button>
         </CardFooter>

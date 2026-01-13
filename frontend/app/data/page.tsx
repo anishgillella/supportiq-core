@@ -319,8 +319,14 @@ export default function DataPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mt-8 flex justify-center gap-4 text-sm"
+          className="mt-8 flex flex-wrap justify-center gap-4 text-sm"
         >
+          <a href="/knowledge" className="text-accent-primary hover:underline">
+            Knowledge Base →
+          </a>
+          <a href="/chat" className="text-accent-primary hover:underline">
+            AI Chat →
+          </a>
           <a href="/" className="text-accent-primary hover:underline">
             View Onboarding →
           </a>

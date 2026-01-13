@@ -13,7 +13,7 @@ async def get_progress(current_user: TokenData = Depends(get_current_user)):
 
     # Get user data
     user_result = (
-        supabase.table("users")
+        supabase.table("supportiq_users")
         .select("current_step, onboarding_completed")
         .eq("id", current_user.user_id)
         .execute()
@@ -29,7 +29,7 @@ async def get_progress(current_user: TokenData = Depends(get_current_user)):
 
     # Get profile data
     profile_result = (
-        supabase.table("user_profiles")
+        supabase.table("supportiq_user_profiles")
         .select("about_me, street_address, city, state, zip_code, birthdate")
         .eq("user_id", current_user.user_id)
         .execute()
@@ -62,7 +62,7 @@ async def update_progress(
     supabase = get_supabase_admin()
 
     # Update user's current step
-    supabase.table("users").update({"current_step": data.step}).eq(
+    supabase.table("supportiq_users").update({"current_step": data.step}).eq(
         "id", current_user.user_id
     ).execute()
 
@@ -85,19 +85,19 @@ async def update_progress(
     if profile_update:
         # Check if profile exists
         existing = (
-            supabase.table("user_profiles")
+            supabase.table("supportiq_user_profiles")
             .select("id")
             .eq("user_id", current_user.user_id)
             .execute()
         )
 
         if existing.data:
-            supabase.table("user_profiles").update(profile_update).eq(
+            supabase.table("supportiq_user_profiles").update(profile_update).eq(
                 "user_id", current_user.user_id
             ).execute()
         else:
             profile_update["user_id"] = current_user.user_id
-            supabase.table("user_profiles").insert(profile_update).execute()
+            supabase.table("supportiq_user_profiles").insert(profile_update).execute()
 
     return {"success": True}
 
@@ -107,7 +107,7 @@ async def complete_onboarding(current_user: TokenData = Depends(get_current_user
     """Mark onboarding as complete"""
     supabase = get_supabase_admin()
 
-    supabase.table("users").update({"onboarding_completed": True}).eq(
+    supabase.table("supportiq_users").update({"onboarding_completed": True}).eq(
         "id", current_user.user_id
     ).execute()
 

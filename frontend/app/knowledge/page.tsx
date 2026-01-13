@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, Globe, FileText, Trash2, Loader2, Plus, Database } from 'lucide-react'
+import { Upload, Globe, FileText, Trash2, Loader2, Plus, Database, MessageSquare } from 'lucide-react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { api } from '@/lib/api'
 
@@ -111,13 +111,22 @@ export default function KnowledgePage() {
               <p className="text-xs text-text-muted">Manage your AI's knowledge</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-primary text-white font-medium hover:bg-accent-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Content
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/chat')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-primary text-text-secondary hover:bg-bg-tertiary transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Open Chat
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-primary text-white font-medium hover:bg-accent-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Content
+            </button>
+          </div>
         </div>
       </header>
 

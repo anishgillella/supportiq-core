@@ -125,6 +125,24 @@ export default function Step3Page() {
     router.push('/step-2')
   }
 
+  const handleSkip = async () => {
+    if (!token) return
+
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      // Mark onboarding as complete without filling this step
+      await api.completeOnboarding(token)
+      completeOnboarding()
+      router.push('/complete')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to skip')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (configLoading) {
     return (
       <Card>
@@ -202,11 +220,16 @@ export default function Step3Page() {
           </motion.div>
         </CardContent>
 
-        <CardFooter>
-          <Button type="button" variant="ghost" onClick={handleBack}>
-            Back
-          </Button>
-          <Button type="submit" isLoading={isSubmitting} disabled={!isValid}>
+        <CardFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button type="button" variant="ghost" onClick={handleBack}>
+              Back
+            </Button>
+            <Button type="button" variant="outline" onClick={handleSkip} disabled={isSubmitting}>
+              Skip for now
+            </Button>
+          </div>
+          <Button type="submit" isLoading={isSubmitting} disabled={!isValid} className="w-full sm:w-auto sm:ml-auto">
             {isSubmitting ? 'Completing...' : 'Complete Setup'}
           </Button>
         </CardFooter>

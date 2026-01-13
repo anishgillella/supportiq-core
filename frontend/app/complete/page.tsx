@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { CheckCircle2, ArrowRight, Sparkles } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Sparkles, Database, MessageSquare } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Confetti } from '@/components/onboarding/confetti'
@@ -102,26 +102,26 @@ export default function CompletePage() {
             className="bg-bg-elevated rounded-xl p-4 mb-6"
           >
             <h3 className="text-sm font-medium text-text-secondary mb-3">
-              What's next?
+              Get started with SupportIQ
             </h3>
             <ul className="space-y-2 text-left">
               <li className="flex items-center gap-2 text-sm text-text-primary">
                 <div className="w-5 h-5 rounded-full bg-accent-muted flex items-center justify-center">
                   <span className="text-xs text-accent-primary font-medium">1</span>
                 </div>
-                Connect your customer support channels
+                Add your website or documents to the Knowledge Base
               </li>
               <li className="flex items-center gap-2 text-sm text-text-primary">
                 <div className="w-5 h-5 rounded-full bg-accent-muted flex items-center justify-center">
                   <span className="text-xs text-accent-primary font-medium">2</span>
                 </div>
-                Configure your AI response templates
+                Chat with your AI assistant to test responses
               </li>
               <li className="flex items-center gap-2 text-sm text-text-primary">
                 <div className="w-5 h-5 rounded-full bg-accent-muted flex items-center justify-center">
                   <span className="text-xs text-accent-primary font-medium">3</span>
                 </div>
-                Start automating customer interactions
+                Deploy to automate customer interactions
               </li>
             </ul>
           </motion.div>
@@ -133,17 +133,32 @@ export default function CompletePage() {
             transition={{ delay: 0.8 }}
             className="space-y-3"
           >
-            <Button size="lg" className="w-full group" onClick={handleViewData}>
-              View Your Data
+            <Button
+              size="lg"
+              className="w-full group"
+              onClick={() => router.push('/knowledge')}
+            >
+              <Database className="mr-2 w-4 h-4" />
+              Add to Knowledge Base
+              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="w-full group"
+              onClick={() => router.push('/chat')}
+            >
+              <MessageSquare className="mr-2 w-4 h-4" />
+              Open AI Chat
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button
               variant="ghost"
               size="lg"
               className="w-full"
-              onClick={handleStartOver}
+              onClick={handleViewData}
             >
-              Start Over (Demo)
+              View User Data
             </Button>
           </motion.div>
         </CardContent>

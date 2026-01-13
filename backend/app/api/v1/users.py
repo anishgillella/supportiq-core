@@ -3,29 +3,29 @@ from typing import List
 from app.models.user import UserWithProfileResponse, ProfileResponse
 from app.core.database import get_supabase_admin
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="/supportiq_users", tags=["Users"])
 
 
 @router.get("", response_model=List[UserWithProfileResponse])
-async def get_all_users():
-    """Get all users with their profiles (public endpoint for data table)"""
+async def get_all_supportiq_users():
+    """Get all supportiq_users with their profiles (public endpoint for data table)"""
     supabase = get_supabase_admin()
 
-    # Get all users
-    users_result = (
-        supabase.table("users")
+    # Get all supportiq_users
+    supportiq_users_result = (
+        supabase.table("supportiq_users")
         .select("id, email, current_step, onboarding_completed, created_at")
         .order("created_at", desc=True)
         .execute()
     )
 
-    if not users_result.data:
+    if not supportiq_users_result.data:
         return []
 
     # Get all profiles
-    user_ids = [user["id"] for user in users_result.data]
+    user_ids = [user["id"] for user in supportiq_users_result.data]
     profiles_result = (
-        supabase.table("user_profiles")
+        supabase.table("supportiq_user_profiles")
         .select("user_id, about_me, street_address, city, state, zip_code, birthdate")
         .in_("user_id", user_ids)
         .execute()
@@ -43,9 +43,9 @@ async def get_all_users():
             birthdate=profile.get("birthdate"),
         )
 
-    # Combine users with profiles
+    # Combine supportiq_users with profiles
     result = []
-    for user in users_result.data:
+    for user in supportiq_users_result.data:
         result.append(
             UserWithProfileResponse(
                 id=user["id"],

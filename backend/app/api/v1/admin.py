@@ -14,7 +14,7 @@ async def get_config():
     supabase = get_supabase_admin()
 
     result = (
-        supabase.table("onboarding_config")
+        supabase.table("supportiq_onboarding_config")
         .select("page_number, component_type, display_order")
         .order("display_order")
         .execute()
@@ -77,7 +77,7 @@ async def update_config(config: PageConfig):
     supabase = get_supabase_admin()
 
     # Clear existing config
-    supabase.table("onboarding_config").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+    supabase.table("supportiq_onboarding_config").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
 
     # Insert new config
     new_config = []
@@ -91,6 +91,6 @@ async def update_config(config: PageConfig):
         )
 
     if new_config:
-        supabase.table("onboarding_config").insert(new_config).execute()
+        supabase.table("supportiq_onboarding_config").insert(new_config).execute()
 
     return {"success": True}
