@@ -18,7 +18,7 @@ async def register(user_data: UserRegister):
     supabase = get_supabase_admin()
 
     # Check if user already exists
-    existing = supabase.table("users").select("id").eq("email", user_data.email).execute()
+    existing = supabase.table("supportiq_users").select("id").eq("email", user_data.email).execute()
     if existing.data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -41,7 +41,7 @@ async def register(user_data: UserRegister):
     if user_data.company_website:
         user_record["company_website"] = user_data.company_website
 
-    result = supabase.table("users").insert(user_record).execute()
+    result = supabase.table("supportiq_users").insert(user_record).execute()
 
     if not result.data:
         raise HTTPException(
@@ -52,7 +52,7 @@ async def register(user_data: UserRegister):
     user = result.data[0]
 
     # Create user profile entry
-    supabase.table("user_profiles").insert({"user_id": user["id"]}).execute()
+    supabase.table("supportiq_user_profiles").insert({"user_id": user["id"]}).execute()
 
     # Generate token
     access_token = create_access_token(data={"sub": user["id"], "email": user["email"]})
@@ -67,7 +67,7 @@ async def login(user_data: UserLogin):
 
     # Find user by email
     result = (
-        supabase.table("users")
+        supabase.table("supportiq_users")
         .select("id, email, password_hash")
         .eq("email", user_data.email)
         .execute()
@@ -99,7 +99,7 @@ async def check_email(email: str):
     """Check if an email already exists in the system"""
     supabase = get_supabase_admin()
 
-    existing = supabase.table("users").select("id").eq("email", email).execute()
+    existing = supabase.table("supportiq_users").select("id").eq("email", email).execute()
 
     return {"exists": len(existing.data) > 0}
 
@@ -110,7 +110,7 @@ async def get_me(current_user: TokenData = Depends(get_current_user)):
     supabase = get_supabase_admin()
 
     result = (
-        supabase.table("users")
+        supabase.table("supportiq_users")
         .select("id, email, current_step, onboarding_completed, created_at")
         .eq("id", current_user.user_id)
         .execute()

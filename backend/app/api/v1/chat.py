@@ -40,7 +40,7 @@ async def chat(
 
     try:
         # Get user info for company name
-        user_result = supabase.table("users") \
+        user_result = supabase.table("supportiq_users") \
             .select("company_name") \
             .eq("id", current_user.user_id) \
             .execute()
@@ -54,7 +54,7 @@ async def chat(
         conversation_messages = []
 
         if conversation_id:
-            conv_result = supabase.table("conversations") \
+            conv_result = supabase.table("supportiq_conversations") \
                 .select("messages") \
                 .eq("id", conversation_id) \
                 .eq("user_id", current_user.user_id) \
@@ -64,7 +64,7 @@ async def chat(
                 conversation_messages = conv_result.data[0].get("messages", [])
         else:
             # Create new conversation
-            conv_result = supabase.table("conversations").insert({
+            conv_result = supabase.table("supportiq_conversations").insert({
                 "user_id": current_user.user_id,
                 "title": request.message[:50] + "..." if len(request.message) > 50 else request.message,
                 "messages": []
@@ -92,8 +92,17 @@ async def chat(
         context_chunks = []
         sources = []
 
+        # Debug: Log search results
+        print(f"[RAG Debug] Query: {request.message}")
+        print(f"[RAG Debug] Namespace: {current_user.user_id}")
+        print(f"[RAG Debug] Search results count: {len(search_results)}")
+        for i, result in enumerate(search_results):
+            content_preview = result.get('metadata', {}).get('content', '')[:200]
+            print(f"[RAG Debug] Result {i}: score={result.get('score', 0):.3f}")
+            print(f"[RAG Debug] Content preview: {content_preview}...")
+
         for result in search_results:
-            if result["score"] > 0.7:  # Only use relevant results
+            if result["score"] > 0.2:  # Lowered threshold to include results (was 0.7)
                 metadata = result["metadata"]
                 context_chunks.append({
                     "title": metadata.get("title", "Unknown"),
@@ -145,7 +154,7 @@ async def chat(
             "sources": [{"title": s.title, "chunk": s.chunk} for s in sources]
         })
 
-        supabase.table("conversations").update({
+        supabase.table("supportiq_conversations").update({
             "messages": conversation_messages
         }).eq("id", conversation_id).execute()
 
@@ -164,21 +173,21 @@ async def chat(
         )
 
 
-@router.get("/conversations")
-async def list_conversations(current_user: TokenData = Depends(get_current_user)):
-    """List all conversations"""
+@router.get("/supportiq_conversations")
+async def list_supportiq_conversations(current_user: TokenData = Depends(get_current_user)):
+    """List all supportiq_conversations"""
     supabase = get_supabase_admin()
 
-    result = supabase.table("conversations") \
+    result = supabase.table("supportiq_conversations") \
         .select("id, title, created_at, updated_at") \
         .eq("user_id", current_user.user_id) \
         .order("updated_at", desc=True) \
         .execute()
 
-    return {"conversations": result.data or []}
+    return {"supportiq_conversations": result.data or []}
 
 
-@router.get("/conversations/{conversation_id}")
+@router.get("/supportiq_conversations/{conversation_id}")
 async def get_conversation(
     conversation_id: str,
     current_user: TokenData = Depends(get_current_user)
@@ -186,7 +195,7 @@ async def get_conversation(
     """Get a specific conversation with messages"""
     supabase = get_supabase_admin()
 
-    result = supabase.table("conversations") \
+    result = supabase.table("supportiq_conversations") \
         .select("*") \
         .eq("id", conversation_id) \
         .eq("user_id", current_user.user_id) \
@@ -201,7 +210,7 @@ async def get_conversation(
     return result.data[0]
 
 
-@router.delete("/conversations/{conversation_id}")
+@router.delete("/supportiq_conversations/{conversation_id}")
 async def delete_conversation(
     conversation_id: str,
     current_user: TokenData = Depends(get_current_user)
@@ -209,7 +218,7 @@ async def delete_conversation(
     """Delete a conversation"""
     supabase = get_supabase_admin()
 
-    supabase.table("conversations") \
+    supabase.table("supportiq_conversations") \
         .delete() \
         .eq("id", conversation_id) \
         .eq("user_id", current_user.user_id) \

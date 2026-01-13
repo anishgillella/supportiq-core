@@ -47,14 +47,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               'w-full px-4 py-3 rounded-xl',
               'bg-bg-elevated border border-border',
-              'text-text-primary placeholder:text-text-muted',
+              'text-white placeholder:text-text-muted',
               'transition-all duration-200',
               'focus:outline-none focus:border-accent-primary',
+              'caret-white',
               error && 'border-error/50 focus:border-error',
               success && !error && 'border-success/50',
               isPassword && 'pr-12',
               className
             )}
+            style={{ color: '#fafafa' }}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             {...props}

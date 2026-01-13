@@ -53,7 +53,7 @@ async def scrape_website(
 
         for page in pages:
             # Create document record
-            doc_result = supabase.table("knowledge_documents").insert({
+            doc_result = supabase.table("supportiq_knowledge_documents").insert({
                 "user_id": current_user.user_id,
                 "title": page["title"],
                 "source": page["url"],
@@ -116,10 +116,10 @@ async def scrape_website(
 
             # Save chunks to database
             if chunk_records:
-                supabase.table("knowledge_chunks").insert(chunk_records).execute()
+                supabase.table("supportiq_knowledge_chunks").insert(chunk_records).execute()
 
             # Update document with chunk count
-            supabase.table("knowledge_documents").update({
+            supabase.table("supportiq_knowledge_documents").update({
                 "chunks_count": len(chunks)
             }).eq("id", document["id"]).execute()
 
@@ -161,7 +161,7 @@ async def upload_document(
         text_content = content.decode("utf-8")
 
         # Create document record
-        doc_result = supabase.table("knowledge_documents").insert({
+        doc_result = supabase.table("supportiq_knowledge_documents").insert({
             "user_id": current_user.user_id,
             "title": file.filename,
             "source": file.filename,
@@ -219,10 +219,10 @@ async def upload_document(
                 print(f"Pinecone upsert failed: {e}")
 
             # Save chunks to database
-            supabase.table("knowledge_chunks").insert(chunk_records).execute()
+            supabase.table("supportiq_knowledge_chunks").insert(chunk_records).execute()
 
             # Update document with chunk count
-            supabase.table("knowledge_documents").update({
+            supabase.table("supportiq_knowledge_documents").update({
                 "chunks_count": len(chunks)
             }).eq("id", document["id"]).execute()
 
@@ -246,7 +246,7 @@ async def list_documents(current_user: TokenData = Depends(get_current_user)):
     """List all documents in the knowledge base"""
     supabase = get_supabase_admin()
 
-    result = supabase.table("knowledge_documents") \
+    result = supabase.table("supportiq_knowledge_documents") \
         .select("id, title, source, source_type, chunks_count, created_at") \
         .eq("user_id", current_user.user_id) \
         .order("created_at", desc=True) \
@@ -264,7 +264,7 @@ async def delete_document(
     supabase = get_supabase_admin()
 
     # Verify ownership
-    doc = supabase.table("knowledge_documents") \
+    doc = supabase.table("supportiq_knowledge_documents") \
         .select("id") \
         .eq("id", document_id) \
         .eq("user_id", current_user.user_id) \
@@ -277,7 +277,7 @@ async def delete_document(
         )
 
     # Get chunk IDs for Pinecone deletion
-    chunks = supabase.table("knowledge_chunks") \
+    chunks = supabase.table("supportiq_knowledge_chunks") \
         .select("embedding_id") \
         .eq("document_id", document_id) \
         .execute()
@@ -291,6 +291,6 @@ async def delete_document(
                 print(f"Pinecone deletion failed: {e}")
 
     # Delete from database (cascade will handle chunks)
-    supabase.table("knowledge_documents").delete().eq("id", document_id).execute()
+    supabase.table("supportiq_knowledge_documents").delete().eq("id", document_id).execute()
 
     return {"success": True}
