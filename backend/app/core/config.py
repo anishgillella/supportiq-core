@@ -31,8 +31,16 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"  # OpenAI embedding model
     embedding_dimensions: int = 1024  # Must match Pinecone index dimensions
 
+    # VAPI Configuration
+    vapi_api_key: str = ""
+    vapi_public_key: str = ""
+    vapi_assistant_id: str = ""
+
+    # Analysis model (for transcript analysis)
+    analysis_model: str = "google/gemini-2.5-flash-preview"
+
     class Config:
-        env_file = "/Users/anishgillella/Desktop/Stuff/Projects/supportiq-core/.env"
+        env_file = "/Users/anishgillella/conductor/workspaces/supportiq-core/.env"
         case_sensitive = False
         extra = "ignore"
 

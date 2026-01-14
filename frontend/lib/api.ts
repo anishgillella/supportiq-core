@@ -203,6 +203,181 @@ class ApiClient {
       }>
     >('/users')
   }
+
+  // ========================================
+  // VOICE ANALYTICS API
+  // ========================================
+
+  async getAnalyticsDashboard(days: number = 7) {
+    return this.request<{
+      overview: {
+        total_calls: number
+        avg_duration_seconds: number
+        resolution_rate: number
+        avg_sentiment_score: number
+        calls_today: number
+        calls_this_week: number
+      }
+      sentiment: {
+        positive: number
+        neutral: number
+        negative: number
+        mixed: number
+      }
+      categories: {
+        categories: Record<string, number>
+      }
+      trends: Array<{
+        date: string
+        calls: number
+        avg_sentiment: number
+        resolution_rate: number
+      }>
+      top_issues: Array<{ category: string; count: number }>
+      recent_calls: Array<{
+        id: string
+        started_at: string
+        duration: number | null
+        status: string
+        sentiment: string | null
+      }>
+    }>(`/analytics/dashboard?days=${days}`)
+  }
+
+  async getVoiceCalls(params?: {
+    page?: number
+    pageSize?: number
+    status?: string
+    sentiment?: string
+  }) {
+    const query = new URLSearchParams()
+    if (params?.page) query.set('page', params.page.toString())
+    if (params?.pageSize) query.set('page_size', params.pageSize.toString())
+    if (params?.status) query.set('status', params.status)
+    if (params?.sentiment) query.set('sentiment', params.sentiment)
+
+    return this.request<{
+      calls: Array<{
+        id: string
+        vapi_call_id: string
+        started_at: string
+        ended_at: string | null
+        duration_seconds: number | null
+        status: string
+        agent_type: string
+        sentiment: string | null
+        category: string | null
+        resolution: string | null
+      }>
+      total: number
+      page: number
+      page_size: number
+    }>(`/voice/calls?${query}`)
+  }
+
+  async getCallDetail(callId: string) {
+    return this.request<{
+      id: string
+      vapi_call_id: string
+      started_at: string
+      ended_at: string | null
+      duration_seconds: number | null
+      status: string
+      agent_type: string
+      sentiment: string | null
+      category: string | null
+      resolution: string | null
+      transcript: Array<{
+        role: string
+        content: string
+        timestamp?: number
+      }> | null
+      analytics: {
+        overall_sentiment: string
+        sentiment_score: number
+        sentiment_progression: Array<{ timestamp: number; sentiment: string }>
+        primary_category: string
+        secondary_categories: string[]
+        resolution_status: string
+        customer_satisfaction_predicted: number
+        agent_performance_score: number
+        customer_intent: string
+        key_topics: string[]
+        action_items: string[]
+        improvement_suggestions: string[]
+        call_summary: string
+      } | null
+      recording_url: string | null
+    }>(`/voice/calls/${callId}`)
+  }
+
+  async getCumulativeDashboard() {
+    return this.request<{
+      overview: {
+        total_calls: number
+        total_duration_seconds: number
+        avg_duration_seconds: number
+        total_resolved: number
+        total_escalated: number
+        resolution_rate: number
+        avg_sentiment_score: number
+        avg_csat: number
+        avg_agent_score: number
+        calls_today: number
+        calls_this_week: number
+        calls_this_month: number
+        calls_vs_last_week: number
+        resolution_vs_last_week: number
+        sentiment_vs_last_week: number
+      }
+      sentiment: {
+        positive: number
+        neutral: number
+        negative: number
+        mixed: number
+      }
+      categories: {
+        categories: Record<string, number>
+      }
+      customer_insights: {
+        total_unique_customers: number
+        repeat_caller_rate: number
+        avg_calls_per_customer: number
+        top_pain_points: Array<{ item: string; count: number }>
+        top_feature_requests: Array<{ item: string; count: number }>
+        top_complaints: Array<{ item: string; count: number }>
+        high_risk_customers: number
+        avg_churn_risk: number
+      }
+      agent_leaderboard: Array<{
+        agent_type: string
+        total_calls: number
+        avg_score: number
+        avg_resolution_rate: number
+        avg_csat: number
+      }>
+      weekly_trends: Array<{
+        date: string
+        calls: number
+        avg_sentiment: number
+        resolution_rate: number
+      }>
+      monthly_trends: Array<{
+        date: string
+        calls: number
+        avg_sentiment: number
+        resolution_rate: number
+      }>
+      top_issues_all_time: Array<{ category: string; count: number }>
+      recent_calls: Array<{
+        id: string
+        started_at: string
+        duration: number | null
+        status: string
+        sentiment: string | null
+      }>
+    }>('/analytics/cumulative')
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)
