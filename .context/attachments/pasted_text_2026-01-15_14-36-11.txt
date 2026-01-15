@@ -1,0 +1,159 @@
+anishgillella@MacBookPro backend % uvicorn app.main:app --reload --port 8000
+INFO:     Will watch for changes in these directories: ['/Users/anishgillella/conductor/workspaces/supportiq-core/columbus/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [61023] using WatchFiles
+INFO:     Started server process [61025]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55286 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55286 - "GET /api/v1/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55286 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55292 - "GET /api/v1/knowledge/documents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55286 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+VAPI webhook received: status-update
+Call 019bc35c-e4c9-7006-9a54-055b3d2c2d26 status update: in-progress
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+[VAPI Tool] Received request: ['message']
+[VAPI] Found user metadata (path 2): user_id=52ba9381-a4b5-4082-b269-33ce618e516c, email=anish@gmail.com
+[VAPI Tool] Function: search_knowledge_base, Args: {'query': 'phone charging issues'}, user_id: 52ba9381-a4b5-4082-b269-33ce618e516c
+[RAG] Searching knowledge base in namespace: 52ba9381-a4b5-4082-b269-33ce618e516c
+[RAG] Found 3 results
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/function HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+[VAPI Tool] Received request: ['message']
+[VAPI] Found user metadata (path 2): user_id=52ba9381-a4b5-4082-b269-33ce618e516c, email=anish@gmail.com
+[VAPI Tool] Function: search_knowledge_base, Args: {'query': 'phone charging issue follow-up'}, user_id: 52ba9381-a4b5-4082-b269-33ce618e516c
+[RAG] Searching knowledge base in namespace: 52ba9381-a4b5-4082-b269-33ce618e516c
+[RAG] Found 3 results
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/function HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+VAPI webhook received: end-of-call-report
+INFO:     34.219.13.159:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+[VAPI DEBUG] call_data keys: ['id', 'orgId', 'createdAt', 'updatedAt', 'type', 'cost', 'monitor', 'transport', 'webCallUrl', 'status', 'assistantId', 'assistantOverrides']
+[VAPI] Found user metadata (path 2): user_id=52ba9381-a4b5-4082-b269-33ce618e516c, email=anish@gmail.com
+[END OF CALL] Processing call for user_id: 52ba9381-a4b5-4082-b269-33ce618e516c, email: anish@gmail.com, name: None
+Processing call 019bc35c-e4c9-7006-9a54-055b3d2c2d26: status=completed, duration=87s, messages=12, user_id=52ba9381-a4b5-4082-b269-33ce618e516c
+Stored transcript for call 019bc35c-e4c9-7006-9a54-055b3d2c2d26: 12 messages, 276 words
+Starting AI analysis for call 019bc35c-e4c9-7006-9a54-055b3d2c2d26
+[ANALYSIS] Successfully validated analysis with Pydantic
+Stored call analytics for 1a34bf6a-d331-4d9b-ad70-f7904f94d96c
+Stored agent performance for 1a34bf6a-d331-4d9b-ad70-f7904f94d96c
+[CUSTOMER PROFILE] Creating/updating profile: email=anish@gmail.com, name=None, phone=None
+Updated customer profile 18102535-8008-4155-85e5-c884ec27b111
+Analysis complete for call 019bc35c-e4c9-7006-9a54-055b3d2c2d26: neutral, unresolved
+Successfully processed call 019bc35c-e4c9-7006-9a54-055b3d2c2d26
+INFO:     127.0.0.1:55344 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55346 - "GET /api/v1/analytics/dashboard?days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55344 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55347 - "GET /api/v1/analytics/cumulative HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55346 - "GET /api/v1/analytics/dashboard?days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55348 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55351 - "GET /api/v1/analytics/cumulative HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55346 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55346 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55351 - "GET /api/v1/voice/calls?page=1&page_size=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55348 - "GET /api/v1/voice/calls?page=1&page_size=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55347 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55361 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55362 - "OPTIONS /api/v1/voice/calls/1a34bf6a-d331-4d9b-ad70-f7904f94d96c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55361 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55362 - "GET /api/v1/voice/calls/1a34bf6a-d331-4d9b-ad70-f7904f94d96c HTTP/1.1" 200 OK
