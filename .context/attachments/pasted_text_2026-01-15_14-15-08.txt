@@ -1,0 +1,157 @@
+anishgillella@MacBookPro columbus % cd backend
+anishgillella@MacBookPro backend % uvicorn app.main:app --reload --port 8000
+INFO:     Will watch for changes in these directories: ['/Users/anishgillella/conductor/workspaces/supportiq-core/columbus/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [30660] using WatchFiles
+INFO:     Started server process [30662]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:53883 - "OPTIONS /api/v1/auth/check-email?email=anish%40gmail.com HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53883 - "GET /api/v1/auth/check-email?email=anish%40gmail.com HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53883 - "OPTIONS /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53883 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53883 - "OPTIONS /api/v1/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53883 - "GET /api/v1/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53883 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53894 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53895 - "OPTIONS /api/v1/knowledge/documents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53894 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53895 - "GET /api/v1/knowledge/documents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53883 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+VAPI webhook received: status-update
+Call 019bc34a-2ae2-7115-adc6-981aefe52fd5 status update: in-progress
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+VAPI webhook received: status-update
+Call 019bc34a-2ae2-7115-adc6-981aefe52fd5 status update: ended
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+VAPI webhook received: end-of-call-report
+INFO:     52.11.97.208:0 - "POST /api/v1/vapi/webhook HTTP/1.1" 200 OK
+[VAPI DEBUG] call_data keys: ['id', 'orgId', 'createdAt', 'updatedAt', 'type', 'cost', 'monitor', 'transport', 'webCallUrl', 'status', 'assistantId', 'assistantOverrides']
+[VAPI] No user metadata found in call
+[END OF CALL] Processing call for user_id: None, email: None, name: None
+Processing call 019bc34a-2ae2-7115-adc6-981aefe52fd5: status=completed, duration=97s, messages=11, user_id=None
+Stored transcript for call 019bc34a-2ae2-7115-adc6-981aefe52fd5: 11 messages, 226 words
+Starting AI analysis for call 019bc34a-2ae2-7115-adc6-981aefe52fd5
+[ANALYSIS] Successfully validated analysis with Pydantic
+Stored call analytics for 56355076-8c65-4989-9038-185cd029fb31
+Stored agent performance for 56355076-8c65-4989-9038-185cd029fb31
+Analysis complete for call 019bc34a-2ae2-7115-adc6-981aefe52fd5: neutral, unresolved
+Successfully processed call 019bc34a-2ae2-7115-adc6-981aefe52fd5
+INFO:     127.0.0.1:53954 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53955 - "OPTIONS /api/v1/analytics/dashboard?days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53956 - "OPTIONS /api/v1/analytics/cumulative HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53959 - "OPTIONS /api/v1/analytics/dashboard?days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53954 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53960 - "OPTIONS /api/v1/analytics/cumulative HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53956 - "GET /api/v1/analytics/dashboard?days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53959 - "GET /api/v1/analytics/cumulative HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53954 - "GET /api/v1/analytics/dashboard?days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53960 - "GET /api/v1/analytics/cumulative HTTP/1.1" 200 OK
