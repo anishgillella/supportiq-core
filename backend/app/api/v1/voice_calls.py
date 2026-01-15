@@ -40,12 +40,15 @@ async def initiate_call(
     """
     Initiate a voice call via VAPI.
 
-    The user_id is automatically passed as metadata so the voice agent
-    can access the correct knowledge base namespace.
+    The user_id and user details are automatically passed as metadata so:
+    - The voice agent can access the correct knowledge base namespace
+    - Post-call analytics can associate the call with the user profile
 
     For web calls (browser-based), returns a web_call_url.
     For phone calls, provide a phone_number.
     """
+    from app.core.database import get_supabase
+
     try:
         assistant_id = request.assistant_id if request else None
         assistant_id = assistant_id or settings.vapi_assistant_id
@@ -66,12 +69,27 @@ async def initiate_call(
         api_key = settings.vapi_api_key
         print(f"Using VAPI API key: {api_key[:4]}...{api_key[-4:]}")
 
-        # Build call payload with user_id in metadata
+        # Fetch user details for metadata
+        supabase = get_supabase()
+        user_result = supabase.table("supportiq_users").select(
+            "email, company_name"
+        ).eq("id", current_user.user_id).execute()
+
+        user_email = None
+        user_name = None
+        if user_result.data:
+            user_data = user_result.data[0]
+            user_email = user_data.get("email")
+            user_name = user_data.get("company_name")  # Use company name as user identifier
+
+        # Build call payload with user details in metadata
         # This metadata will be available in all webhook events
         call_payload = {
             "assistantId": assistant_id,
             "metadata": {
                 "user_id": current_user.user_id,
+                "user_email": user_email,
+                "user_name": user_name,
                 "initiated_from": "dashboard"
             }
         }

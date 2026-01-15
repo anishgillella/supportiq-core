@@ -9,10 +9,19 @@ async def chat_completion(
     system_prompt: Optional[str] = None,
     model: Optional[str] = None,
     max_tokens: int = 1024,
-    temperature: float = 0.7
+    temperature: float = 0.7,
+    json_mode: bool = False
 ) -> str:
     """
     Generate a chat completion using OpenRouter.
+
+    Args:
+        messages: List of message dicts with 'role' and 'content'
+        system_prompt: Optional system prompt
+        model: Model to use (defaults to settings.llm_model)
+        max_tokens: Maximum tokens in response
+        temperature: Sampling temperature
+        json_mode: If True, forces JSON output (model must support it)
     """
     if not settings.openrouter_api_key:
         raise ValueError("OpenRouter API key not configured")
@@ -25,7 +34,19 @@ async def chat_completion(
         all_messages.append({"role": "system", "content": system_prompt})
     all_messages.extend(messages)
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    # Build request payload
+    payload = {
+        "model": model,
+        "messages": all_messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature
+    }
+
+    # Add JSON mode if requested (forces structured JSON output)
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
@@ -34,12 +55,7 @@ async def chat_completion(
                 "HTTP-Referer": settings.frontend_url,
                 "X-Title": "SupportIQ"
             },
-            json={
-                "model": model,
-                "messages": all_messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature
-            }
+            json=payload
         )
 
         if response.status_code != 200:

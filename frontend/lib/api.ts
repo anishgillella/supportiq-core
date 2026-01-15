@@ -209,7 +209,7 @@ class ApiClient {
   // VOICE ANALYTICS API
   // ========================================
 
-  async getAnalyticsDashboard(days: number = 7) {
+  async getAnalyticsDashboard(token: string, days: number = 7) {
     return this.request<{
       overview: {
         total_calls: number
@@ -242,10 +242,10 @@ class ApiClient {
         status: string
         sentiment: string | null
       }>
-    }>(`/analytics/dashboard?days=${days}`)
+    }>(`/analytics/dashboard?days=${days}`, { token })
   }
 
-  async getVoiceCalls(params?: {
+  async getVoiceCalls(token: string, params?: {
     page?: number
     pageSize?: number
     status?: string
@@ -273,10 +273,10 @@ class ApiClient {
       total: number
       page: number
       page_size: number
-    }>(`/voice/calls?${query}`)
+    }>(`/voice/calls?${query}`, { token })
   }
 
-  async getCallDetail(callId: string) {
+  async getCallDetail(token: string, callId: string) {
     return this.request<{
       id: string
       vapi_call_id: string
@@ -309,7 +309,7 @@ class ApiClient {
         call_summary: string
       } | null
       recording_url: string | null
-    }>(`/voice/calls/${callId}`)
+    }>(`/voice/calls/${callId}`, { token })
   }
 
   // Voice call initiation
@@ -329,7 +329,7 @@ class ApiClient {
     })
   }
 
-  async getCumulativeDashboard() {
+  async getCumulativeDashboard(token: string) {
     return this.request<{
       overview: {
         total_calls: number
@@ -361,9 +361,9 @@ class ApiClient {
         total_unique_customers: number
         repeat_caller_rate: number
         avg_calls_per_customer: number
-        top_pain_points: Array<{ item: string; count: number }>
-        top_feature_requests: Array<{ item: string; count: number }>
-        top_complaints: Array<{ item: string; count: number }>
+        top_pain_points: Array<{ text: string; count: number }>
+        top_feature_requests: Array<{ text: string; count: number }>
+        top_complaints: Array<{ text: string; count: number }>
         high_risk_customers: number
         avg_churn_risk: number
       }
@@ -394,7 +394,109 @@ class ApiClient {
         status: string
         sentiment: string | null
       }>
-    }>('/analytics/cumulative')
+    }>('/analytics/cumulative', { token })
+  }
+
+  // ========================================
+  // ENHANCED ANALYTICS ENDPOINTS
+  // ========================================
+
+  async getCustomers(token: string, params?: {
+    page?: number
+    pageSize?: number
+    riskLevel?: string
+    customerType?: string
+  }) {
+    const query = new URLSearchParams()
+    if (params?.page) query.set('page', params.page.toString())
+    if (params?.pageSize) query.set('page_size', params.pageSize.toString())
+    if (params?.riskLevel) query.set('risk_level', params.riskLevel)
+    if (params?.customerType) query.set('customer_type', params.customerType)
+
+    return this.request<{
+      customers: Array<{
+        id: string
+        name: string | null
+        email: string | null
+        phone: string | null
+        customer_type: string
+        total_calls: number
+        avg_satisfaction: number
+        churn_risk_level: string
+        churn_risk_score: number
+        last_call_at: string | null
+      }>
+      total: number
+      page: number
+      page_size: number
+    }>(`/analytics/customers?${query}`, { token })
+  }
+
+  async getHighRiskCustomers(token: string, limit: number = 10) {
+    return this.request<Array<{
+      id: string
+      name: string | null
+      email: string | null
+      phone: string | null
+      churn_risk_score: number
+      churn_risk_factors: string[]
+      recommended_actions: string[]
+      last_call_at: string | null
+      total_calls: number
+    }>>(`/analytics/high-risk-customers?limit=${limit}`, { token })
+  }
+
+  async getFeedback(token: string, feedbackType?: string, limit: number = 20) {
+    const query = new URLSearchParams()
+    if (feedbackType) query.set('feedback_type', feedbackType)
+    query.set('limit', limit.toString())
+
+    return this.request<Array<{
+      text: string
+      count: number
+      category: string | null
+      first_mentioned: string | null
+      last_mentioned: string | null
+    }>>(`/analytics/feedback?${query}`, { token })
+  }
+
+  async getActionItems(token: string, limit: number = 20) {
+    return this.request<Array<{
+      call_id: string
+      call_date: string
+      customer_name: string | null
+      action_items: string[]
+      commitments_made: string[]
+      follow_up_deadline: string | null
+    }>>(`/analytics/action-items?limit=${limit}`, { token })
+  }
+
+  async getKnowledgeGaps(token: string, limit: number = 10) {
+    return this.request<Array<{
+      text: string
+      count: number
+      category: string | null
+      first_mentioned: string | null
+      last_mentioned: string | null
+    }>>(`/analytics/knowledge-gaps?limit=${limit}`, { token })
+  }
+
+  async getAgentPerformanceSummary(token: string, days: number = 30) {
+    return this.request<{
+      total_calls_analyzed: number
+      average_scores: {
+        overall: number
+        empathy: number
+        knowledge: number
+        communication: number
+        efficiency: number
+        opening: number
+        closing: number
+      }
+      top_strengths: Array<{ text: string; count: number }>
+      top_areas_for_improvement: Array<{ text: string; count: number }>
+      top_training_recommendations: Array<{ text: string; count: number }>
+    }>(`/analytics/agent-performance-summary?days=${days}`, { token })
   }
 }
 

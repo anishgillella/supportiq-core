@@ -111,34 +111,57 @@ async def handle_assistant_request(body: dict) -> dict:
 # HELPER: EXTRACT USER ID FROM CALL METADATA
 # ========================================
 
-def extract_user_id_from_body(body: dict) -> str:
+def extract_user_metadata_from_body(body: dict) -> dict:
     """
-    Extract user_id from VAPI webhook body.
-    The user_id is passed in call metadata when the call is initiated.
-    Returns the user_id or None if not found.
+    Extract user metadata from VAPI webhook body.
+    Includes user_id, user_email, user_name passed when call was initiated.
+    Returns a dict with all available user info.
     """
+    result = {
+        "user_id": None,
+        "user_email": None,
+        "user_name": None
+    }
+
     # Try different paths where metadata might be
     message = body.get("message", {})
     call_data = message.get("call", {})
 
-    # Primary path: call.metadata.user_id
+    # Primary path: call.metadata
     metadata = call_data.get("metadata", {})
-    user_id = metadata.get("user_id")
 
-    if user_id:
-        print(f"[VAPI] Found user_id in call metadata: {user_id}")
-        return user_id
+    if metadata:
+        result["user_id"] = metadata.get("user_id")
+        result["user_email"] = metadata.get("user_email")
+        result["user_name"] = metadata.get("user_name")
+
+        if result["user_id"]:
+            print(f"[VAPI] Found user metadata in call: user_id={result['user_id']}, email={result['user_email']}")
+            return result
 
     # Fallback: check top-level call object
     if "call" in body:
         metadata = body["call"].get("metadata", {})
-        user_id = metadata.get("user_id")
-        if user_id:
-            print(f"[VAPI] Found user_id in top-level call: {user_id}")
-            return user_id
+        if metadata:
+            result["user_id"] = metadata.get("user_id")
+            result["user_email"] = metadata.get("user_email")
+            result["user_name"] = metadata.get("user_name")
 
-    print("[VAPI] No user_id found in call metadata")
-    return None
+            if result["user_id"]:
+                print(f"[VAPI] Found user metadata in top-level call: user_id={result['user_id']}")
+                return result
+
+    print("[VAPI] No user metadata found in call")
+    return result
+
+
+def extract_user_id_from_body(body: dict) -> str:
+    """
+    Extract user_id from VAPI webhook body.
+    Wrapper for backwards compatibility.
+    """
+    metadata = extract_user_metadata_from_body(body)
+    return metadata.get("user_id")
 
 
 # ========================================
@@ -233,11 +256,14 @@ async def handle_end_of_call(body: dict):
 
     1. Store call metadata (including user_id for data isolation)
     2. Store transcript
-    3. Trigger AI analysis
+    3. Trigger AI analysis with user details for customer profile
     """
     try:
         message = body.get("message", {})
         call_data = message.get("call", {})
+
+        # Debug: Print call_data keys to understand VAPI payload structure
+        print(f"[VAPI DEBUG] call_data keys: {list(call_data.keys())}")
 
         # Extract call info
         vapi_call_id = call_data.get("id")
@@ -245,12 +271,31 @@ async def handle_end_of_call(body: dict):
             print("No call ID in end-of-call report")
             return
 
-        # Extract user_id from metadata to associate call with the user
-        user_id = extract_user_id_from_body(body)
-        print(f"[END OF CALL] Processing call for user_id: {user_id}")
+        # Extract full user metadata including email and name
+        user_metadata = extract_user_metadata_from_body(body)
+        user_id = user_metadata.get("user_id")
+        user_email = user_metadata.get("user_email")
+        user_name = user_metadata.get("user_name")
+        print(f"[END OF CALL] Processing call for user_id: {user_id}, email: {user_email}, name: {user_name}")
 
-        started_at = call_data.get("startedAt")
-        ended_at = call_data.get("endedAt")
+        # Extract timestamps - VAPI uses camelCase (startedAt, endedAt)
+        # Also check for alternative keys (started_at, createdAt)
+        started_at = (
+            call_data.get("startedAt") or
+            call_data.get("started_at") or
+            call_data.get("createdAt") or
+            message.get("startedAt")
+        )
+        ended_at = (
+            call_data.get("endedAt") or
+            call_data.get("ended_at") or
+            message.get("endedAt")
+        )
+
+        # Fallback: use current time if started_at is missing
+        if not started_at:
+            started_at = datetime.utcnow().isoformat() + "Z"
+            print(f"[VAPI WARNING] No startedAt found, using current time: {started_at}")
 
         # Calculate duration
         duration = None
@@ -312,10 +357,14 @@ async def handle_end_of_call(body: dict):
             analysis = await analyze_transcript(
                 call_id=call_record["id"],
                 transcript_messages=messages,
-                full_transcript=transcript_text
+                full_transcript=transcript_text,
+                user_id=user_id,  # Pass user_id for customer profile association
+                user_email=user_email,  # Pass user email for customer identification
+                user_name=user_name  # Pass user name for customer profile
             )
             if analysis:
-                print(f"Analysis complete for call {vapi_call_id}: {analysis.get('overall_sentiment')}, {analysis.get('resolution_status')}")
+                call_analysis = analysis.get("call_analysis", analysis)
+                print(f"Analysis complete for call {vapi_call_id}: {call_analysis.get('overall_sentiment')}, {call_analysis.get('resolution_status')}")
             else:
                 print(f"Analysis failed for call {vapi_call_id}")
 
