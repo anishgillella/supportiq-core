@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
   isLoading?: boolean
   children: React.ReactNode
@@ -19,6 +19,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const variants = {
       primary: 'bg-accent-primary text-white hover:bg-accent-hover',
       secondary: 'bg-bg-elevated text-text-primary border border-border hover:bg-bg-secondary hover:border-text-muted',
+      outline: 'bg-transparent text-text-primary border border-border hover:bg-bg-elevated hover:border-text-muted',
       ghost: 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated',
     }
 

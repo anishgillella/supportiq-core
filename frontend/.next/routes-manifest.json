@@ -20,7 +20,16 @@
     "afterFiles": [],
     "fallback": []
   },
-  "dynamicRoutes": [],
+  "dynamicRoutes": [
+    {
+      "page": "/dashboard/calls/[id]",
+      "regex": "^/dashboard/calls/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/calls/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
   "staticRoutes": [
     {
       "page": "/",
@@ -47,16 +56,46 @@
       "namedRegex": "^/admin(?:/)?$"
     },
     {
+      "page": "/chat",
+      "regex": "^/chat(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/chat(?:/)?$"
+    },
+    {
       "page": "/complete",
       "regex": "^/complete(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/complete(?:/)?$"
     },
     {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/calls",
+      "regex": "^/dashboard/calls(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/calls(?:/)?$"
+    },
+    {
       "page": "/data",
       "regex": "^/data(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/data(?:/)?$"
+    },
+    {
+      "page": "/knowledge",
+      "regex": "^/knowledge(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/knowledge(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
     },
     {
       "page": "/step-2",

@@ -140,7 +140,7 @@ self.__SERVER_FILES_MANIFEST={
       "isExperimentalCompile": false
     }
   },
-  "appDir": "/Users/anishgillella/conductor/workspaces/supportiq-core/palenque/frontend",
+  "appDir": "/Users/anishgillella/conductor/workspaces/supportiq-core/milan-v2/frontend",
   "relativeAppDir": "",
   "files": [
     ".next/routes-manifest.json",

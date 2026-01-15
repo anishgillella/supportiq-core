@@ -20,11 +20,35 @@
       "static/media/Geist_Variable-s.p.f19e4721.woff2",
       "static/media/GeistMono_Variable.p.73882635.woff2"
     ],
+    "[project]/app/chat/page": [
+      "static/media/Geist_Variable-s.p.f19e4721.woff2",
+      "static/media/GeistMono_Variable.p.73882635.woff2"
+    ],
     "[project]/app/complete/page": [
       "static/media/Geist_Variable-s.p.f19e4721.woff2",
       "static/media/GeistMono_Variable.p.73882635.woff2"
     ],
+    "[project]/app/dashboard/calls/[id]/page": [
+      "static/media/Geist_Variable-s.p.f19e4721.woff2",
+      "static/media/GeistMono_Variable.p.73882635.woff2"
+    ],
+    "[project]/app/dashboard/calls/page": [
+      "static/media/Geist_Variable-s.p.f19e4721.woff2",
+      "static/media/GeistMono_Variable.p.73882635.woff2"
+    ],
+    "[project]/app/dashboard/page": [
+      "static/media/Geist_Variable-s.p.f19e4721.woff2",
+      "static/media/GeistMono_Variable.p.73882635.woff2"
+    ],
     "[project]/app/data/page": [
+      "static/media/Geist_Variable-s.p.f19e4721.woff2",
+      "static/media/GeistMono_Variable.p.73882635.woff2"
+    ],
+    "[project]/app/knowledge/page": [
+      "static/media/Geist_Variable-s.p.f19e4721.woff2",
+      "static/media/GeistMono_Variable.p.73882635.woff2"
+    ],
+    "[project]/app/login/page": [
       "static/media/Geist_Variable-s.p.f19e4721.woff2",
       "static/media/GeistMono_Variable.p.73882635.woff2"
     ]

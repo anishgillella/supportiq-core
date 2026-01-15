@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, Globe, FileText, Trash2, Loader2, Plus, Database, MessageSquare, Phone, PhoneCall, PhoneOff, Mic, MicOff } from 'lucide-react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { api } from '@/lib/api'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import Vapi from '@vapi-ai/web'
 
 interface Document {
@@ -99,15 +100,9 @@ export default function KnowledgePage() {
   }, [])
 
   useEffect(() => {
-    // Don't redirect until hydration is complete
-    if (!isHydrated) return
-
-    if (!token) {
-      router.push('/login')
-      return
-    }
+    if (!isHydrated || !token) return
     loadDocuments()
-  }, [token, router, isHydrated])
+  }, [token, isHydrated])
 
   const loadDocuments = async () => {
     if (!token) return
@@ -204,17 +199,9 @@ export default function KnowledgePage() {
     }
   }, [isMuted])
 
-  // Show loading while hydrating or if no token yet
-  if (!isHydrated || !token) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
+    <AuthenticatedLayout>
+      <div className="min-h-screen bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
       {/* Header */}
       <header className="border-b border-border-primary bg-bg-secondary/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -547,5 +534,6 @@ export default function KnowledgePage() {
         )}
       </AnimatePresence>
     </div>
+    </AuthenticatedLayout>
   )
 }

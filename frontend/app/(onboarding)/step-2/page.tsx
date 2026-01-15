@@ -64,11 +64,19 @@ export default function Step2Page() {
     } as FormData,
   })
 
-  // Redirect if not authenticated
+  // Validate token and redirect if not authenticated
   useEffect(() => {
     if (!token) {
       router.push('/')
+      return
     }
+
+    // Validate token is still valid
+    api.getCurrentUser(token).catch(() => {
+      // Token is invalid/expired, clear auth and redirect to login
+      useOnboardingStore.getState().reset()
+      router.push('/')
+    })
   }, [token, router])
 
   const onSubmit = async (data: FormData) => {

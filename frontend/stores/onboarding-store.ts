@@ -10,6 +10,7 @@ export interface AddressData {
 
 export interface OnboardingFormData {
   email: string
+  companyWebsite: string | null
   aboutMe: string
   address: AddressData | null
   birthdate: string | null
@@ -37,6 +38,7 @@ interface OnboardingState {
 
 const initialFormData: OnboardingFormData = {
   email: '',
+  companyWebsite: null,
   aboutMe: '',
   address: null,
   birthdate: null,

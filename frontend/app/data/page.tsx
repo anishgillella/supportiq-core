@@ -6,6 +6,7 @@ import { Database, RefreshCw, User, Mail, Calendar, MapPin, FileText, Check, X }
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
+import { PublicLayout } from '@/components/layout/public-layout'
 
 interface UserData {
   id: string
@@ -72,13 +73,16 @@ export default function DataPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary" />
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary" />
+        </div>
+      </PublicLayout>
     )
   }
 
   return (
+    <PublicLayout>
     <div className="min-h-screen bg-bg-primary py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -336,5 +340,6 @@ export default function DataPage() {
         </motion.div>
       </div>
     </div>
+    </PublicLayout>
   )
 }

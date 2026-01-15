@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { AboutMeField } from '@/components/onboarding/about-me-field'
 import { AddressFields } from '@/components/onboarding/address-fields'
 import { BirthdateField } from '@/components/onboarding/birthdate-field'
+import { Switch } from '@/components/ui/switch'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { useAdminConfig, ComponentType } from '@/hooks/use-admin-config'
 import { aboutMeSchema, addressSchema, birthdateSchema } from '@/lib/validations'
@@ -39,6 +40,7 @@ export default function Step3Page() {
   const { config, isLoading: configLoading } = useAdminConfig()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [setupKnowledgeBase, setSetupKnowledgeBase] = useState(true)
 
   const components = config.page3
 
@@ -64,11 +66,19 @@ export default function Step3Page() {
     } as FormData,
   })
 
-  // Redirect if not authenticated
+  // Validate token and redirect if not authenticated
   useEffect(() => {
     if (!token) {
       router.push('/')
+      return
     }
+
+    // Validate token is still valid
+    api.getCurrentUser(token).catch(() => {
+      // Token is invalid/expired, clear auth and redirect to login
+      useOnboardingStore.getState().reset()
+      router.push('/')
+    })
   }, [token, router])
 
   const onSubmit = async (data: FormData) => {
@@ -112,6 +122,13 @@ export default function Step3Page() {
       // Mark onboarding as complete
       await api.completeOnboarding(token)
       completeOnboarding()
+
+      // Trigger knowledge base setup async if enabled (fire and forget)
+      if (setupKnowledgeBase && formData.companyWebsite) {
+        api.scrapeWebsite(token, formData.companyWebsite).catch((err) => {
+          console.warn('Background knowledge base setup failed:', err)
+        })
+      }
 
       router.push('/complete')
     } catch (err) {
@@ -208,6 +225,21 @@ export default function Step3Page() {
               return null
             })}
 
+            {formData.companyWebsite && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="pt-4 border-t border-border"
+              >
+                <Switch
+                  checked={setupKnowledgeBase}
+                  onCheckedChange={setSetupKnowledgeBase}
+                  label="Set up knowledge base from your digital footprint"
+                  description="We'll use Parallel AI to analyze your company website and build your AI knowledge base"
+                />
+              </motion.div>
+            )}
+
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -215,6 +247,20 @@ export default function Step3Page() {
                 className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm"
               >
                 {error}
+              </motion.div>
+            )}
+
+            {isSubmitting && setupKnowledgeBase && formData.companyWebsite && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 rounded-lg bg-accent-primary/10 border border-accent-primary/20 text-accent-primary text-sm flex items-center gap-2"
+              >
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Setting up your knowledge base — this may take a few seconds to gather everything from your digital footprint
               </motion.div>
             )}
           </motion.div>
