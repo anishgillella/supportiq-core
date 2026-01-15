@@ -21,6 +21,8 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { useOnboardingStore } from '@/stores/onboarding-store'
 
 interface CallDetail {
   id: string
@@ -110,6 +112,7 @@ function formatDuration(seconds: number | null): string {
 export default function CallDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { token } = useOnboardingStore()
   const callId = params.id as string
 
   const [call, setCall] = useState<CallDetail | null>(null)
@@ -118,9 +121,13 @@ export default function CallDetailPage() {
 
   useEffect(() => {
     const loadCall = async () => {
+      if (!token) {
+        setLoading(false)
+        return
+      }
       try {
         setLoading(true)
-        const result = await api.getCallDetail(callId)
+        const result = await api.getCallDetail(token, callId)
         setCall(result)
       } catch (e) {
         setError('Failed to load call details')
@@ -130,30 +137,35 @@ export default function CallDetailPage() {
       }
     }
     loadCall()
-  }, [callId])
+  }, [callId, token])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary" />
-      </div>
+      <AuthenticatedLayout>
+        <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary" />
+        </div>
+      </AuthenticatedLayout>
     )
   }
 
   if (error || !call) {
     return (
-      <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center">
-        <p className="text-text-muted">{error || 'Call not found'}</p>
-        <Link href="/dashboard" className="mt-4 text-accent-primary hover:underline">
-          Back to Dashboard
-        </Link>
-      </div>
+      <AuthenticatedLayout>
+        <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center">
+          <p className="text-text-muted">{error || 'Call not found'}</p>
+          <Link href="/dashboard" className="mt-4 text-accent-primary hover:underline">
+            Back to Dashboard
+          </Link>
+        </div>
+      </AuthenticatedLayout>
     )
   }
 
   const analytics = call.analytics
 
   return (
+    <AuthenticatedLayout>
     <div className="min-h-screen bg-bg-primary p-6">
       <div className="max-w-5xl mx-auto">
         {/* Back Button */}
@@ -387,5 +399,6 @@ export default function CallDetailPage() {
         </div>
       </div>
     </div>
+    </AuthenticatedLayout>
   )
 }

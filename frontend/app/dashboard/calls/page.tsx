@@ -16,6 +16,8 @@ import {
   Filter,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { useOnboardingStore } from '@/stores/onboarding-store'
 
 interface Call {
   id: string
@@ -93,6 +95,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function CallsListPage() {
+  const { token } = useOnboardingStore()
   const [calls, setCalls] = useState<Call[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -103,10 +106,14 @@ export default function CallsListPage() {
   const pageSize = 20
 
   const loadCalls = async () => {
+    if (!token) {
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
       setError(null)
-      const result = await api.getVoiceCalls({
+      const result = await api.getVoiceCalls(token, {
         page,
         pageSize,
         status: statusFilter || undefined,
@@ -115,8 +122,9 @@ export default function CallsListPage() {
       setCalls(result.calls)
       setTotal(result.total)
     } catch (e) {
-      setError('Failed to load calls')
-      console.error(e)
+      console.error('Failed to load calls:', e)
+      setCalls([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
@@ -124,11 +132,12 @@ export default function CallsListPage() {
 
   useEffect(() => {
     loadCalls()
-  }, [page, statusFilter, sentimentFilter])
+  }, [page, statusFilter, sentimentFilter, token])
 
   const totalPages = Math.ceil(total / pageSize)
 
   return (
+    <AuthenticatedLayout>
     <div className="min-h-screen bg-bg-primary p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -294,5 +303,6 @@ export default function CallsListPage() {
         )}
       </div>
     </div>
+    </AuthenticatedLayout>
   )
 }

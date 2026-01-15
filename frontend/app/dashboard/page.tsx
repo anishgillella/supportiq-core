@@ -13,13 +13,17 @@ import {
   Smile,
   Meh,
   Frown,
-  ArrowLeft,
   BarChart3,
   MessageSquare,
   RefreshCw,
+  Users,
+  AlertTriangle,
+  Lightbulb,
+  Target,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { useOnboardingStore } from '@/stores/onboarding-store'
 
 interface DashboardData {
   overview: {
@@ -53,6 +57,16 @@ interface DashboardData {
     status: string
     sentiment: string | null
   }>
+}
+
+interface CumulativeData {
+  customer_insights: {
+    total_unique_customers: number
+    repeat_caller_rate: number
+    high_risk_customers: number
+    top_pain_points: Array<{ text: string; count: number }>
+    top_feature_requests: Array<{ text: string; count: number }>
+  }
 }
 
 function formatDuration(seconds: number): string {
@@ -117,7 +131,7 @@ function StatsCard({
   value: string | number
   icon: React.ReactNode
   subtitle?: string
-  color?: 'blue' | 'green' | 'purple' | 'red' | 'gray'
+  color?: 'blue' | 'green' | 'purple' | 'red' | 'gray' | 'yellow' | 'orange'
 }) {
   const colorClasses = {
     blue: 'bg-blue-500/20 text-blue-400',
@@ -125,6 +139,8 @@ function StatsCard({
     purple: 'bg-purple-500/20 text-purple-400',
     red: 'bg-red-500/20 text-red-400',
     gray: 'bg-gray-500/20 text-gray-400',
+    yellow: 'bg-yellow-500/20 text-yellow-400',
+    orange: 'bg-orange-500/20 text-orange-400',
   }
 
   return (
@@ -141,22 +157,42 @@ function StatsCard({
   )
 }
 
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <div className="p-3 rounded-full bg-bg-tertiary mb-3">
+        <Phone className="w-6 h-6 text-text-muted" />
+      </div>
+      <p className="text-text-muted text-sm">{message}</p>
+      <p className="text-text-muted text-xs mt-1">Make your first call to see analytics</p>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
+  const { token } = useOnboardingStore()
   const [data, setData] = useState<DashboardData | null>(null)
+  const [cumulativeData, setCumulativeData] = useState<CumulativeData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState(7)
 
   const loadData = async () => {
+    if (!token) {
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
-      setError(null)
-      const result = await api.getAnalyticsDashboard(dateRange)
-      setData(result)
+      const [dashboardResult, cumulativeResult] = await Promise.all([
+        api.getAnalyticsDashboard(token, dateRange).catch(() => null),
+        api.getCumulativeDashboard(token).catch(() => null),
+      ])
+      setData(dashboardResult)
+      setCumulativeData(cumulativeResult)
     } catch (e) {
-      setError('Failed to load dashboard data')
-      console.error(e)
+      console.error('Failed to load dashboard data:', e)
     } finally {
       setLoading(false)
     }
@@ -164,35 +200,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData()
-  }, [dateRange])
+  }, [dateRange, token])
 
   if (loading) {
     return (
       <AuthenticatedLayout>
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary" />
-      </div>
+        <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary" />
+        </div>
       </AuthenticatedLayout>
     )
   }
 
-  if (error) {
-    return (
-      <AuthenticatedLayout>
-      <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <p className="text-text-muted">{error}</p>
-        <button
-          onClick={loadData}
-          className="mt-4 px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/90"
-        >
-          Retry
-        </button>
-      </div>
-      </AuthenticatedLayout>
-    )
-  }
-
+  // Use default values if no data
   const overview = data?.overview || {
     total_calls: 0,
     avg_duration_seconds: 0,
@@ -207,229 +227,320 @@ export default function DashboardPage() {
   const trends = data?.trends || []
   const topIssues = data?.top_issues || []
   const recentCalls = data?.recent_calls || []
+  const customerInsights = cumulativeData?.customer_insights
 
   const totalSentiment = sentiment.positive + sentiment.neutral + sentiment.negative + sentiment.mixed
 
   return (
     <AuthenticatedLayout>
-    <div className="min-h-screen bg-bg-primary p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-text-primary flex items-center gap-3">
-                <BarChart3 className="w-8 h-8 text-accent-primary" />
-                Voice Analytics
-              </h1>
-              <p className="text-text-muted">Customer call insights and performance metrics</p>
+      <div className="min-h-screen bg-bg-primary p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-text-primary flex items-center gap-3">
+                  <BarChart3 className="w-8 h-8 text-accent-primary" />
+                  Voice Analytics
+                </h1>
+                <p className="text-text-muted">Customer call insights and performance metrics</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={loadData}
+                className="p-2 rounded-lg hover:bg-bg-secondary transition-colors text-text-muted hover:text-text-primary"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(Number(e.target.value))}
+                className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary text-text-primary"
+              >
+                <option value={7}>Last 7 days</option>
+                <option value={14}>Last 14 days</option>
+                <option value={30}>Last 30 days</option>
+                <option value={90}>Last 90 days</option>
+              </select>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={loadData}
-              className="p-2 rounded-lg hover:bg-bg-secondary transition-colors text-text-muted hover:text-text-primary"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(Number(e.target.value))}
-              className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary text-text-primary"
-            >
-              <option value={7}>Last 7 days</option>
-              <option value={14}>Last 14 days</option>
-              <option value={30}>Last 30 days</option>
-              <option value={90}>Last 90 days</option>
-            </select>
+          {/* Overview Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatsCard
+              title="Total Calls"
+              value={overview.total_calls}
+              icon={<Phone className="w-6 h-6" />}
+              subtitle={`${overview.calls_today} today`}
+              color="blue"
+            />
+            <StatsCard
+              title="Avg Duration"
+              value={formatDuration(overview.avg_duration_seconds)}
+              icon={<Clock className="w-6 h-6" />}
+              color="purple"
+            />
+            <StatsCard
+              title="Resolution Rate"
+              value={`${overview.resolution_rate.toFixed(1)}%`}
+              icon={<CheckCircle className="w-6 h-6" />}
+              color="green"
+            />
+            <StatsCard
+              title="Avg Sentiment"
+              value={overview.avg_sentiment_score > 0.3 ? 'Positive' : overview.avg_sentiment_score < -0.3 ? 'Negative' : 'Neutral'}
+              icon={<TrendingUp className="w-6 h-6" />}
+              color={overview.avg_sentiment_score > 0 ? 'green' : overview.avg_sentiment_score < 0 ? 'red' : 'gray'}
+            />
           </div>
-        </div>
 
-        {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            title="Total Calls"
-            value={overview.total_calls}
-            icon={<Phone className="w-6 h-6" />}
-            subtitle={`${overview.calls_today} today`}
-            color="blue"
-          />
-          <StatsCard
-            title="Avg Duration"
-            value={formatDuration(overview.avg_duration_seconds)}
-            icon={<Clock className="w-6 h-6" />}
-            color="purple"
-          />
-          <StatsCard
-            title="Resolution Rate"
-            value={`${overview.resolution_rate.toFixed(1)}%`}
-            icon={<CheckCircle className="w-6 h-6" />}
-            color="green"
-          />
-          <StatsCard
-            title="Avg Sentiment"
-            value={overview.avg_sentiment_score > 0.3 ? 'Positive' : overview.avg_sentiment_score < -0.3 ? 'Negative' : 'Neutral'}
-            icon={<TrendingUp className="w-6 h-6" />}
-            color={overview.avg_sentiment_score > 0 ? 'green' : overview.avg_sentiment_score < 0 ? 'red' : 'gray'}
-          />
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Sentiment Breakdown */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-bg-secondary rounded-xl border border-border-primary p-6"
-          >
-            <h2 className="text-lg font-semibold text-text-primary mb-4">Sentiment Breakdown</h2>
-            <div className="space-y-4">
-              {[
-                { icon: <Smile className="w-5 h-5 text-green-400" />, label: 'Positive', count: sentiment.positive, color: 'green' },
-                { icon: <Meh className="w-5 h-5 text-gray-400" />, label: 'Neutral', count: sentiment.neutral, color: 'gray' },
-                { icon: <Frown className="w-5 h-5 text-red-400" />, label: 'Negative', count: sentiment.negative, color: 'red' },
-              ].map((item) => {
-                const percentage = totalSentiment > 0 ? (item.count / totalSentiment) * 100 : 0
-                return (
-                  <div key={item.label} className="flex items-center gap-3">
-                    {item.icon}
-                    <div className="flex-1">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-text-muted">{item.label}</span>
-                        <span className="text-text-primary font-medium">{item.count}</span>
-                      </div>
-                      <div className="h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full bg-${item.color}-500`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </motion.div>
-
-          {/* Top Issues */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-bg-secondary rounded-xl border border-border-primary p-6"
-          >
-            <h2 className="text-lg font-semibold text-text-primary mb-4">Top Issue Categories</h2>
-            <div className="space-y-3">
-              {topIssues.length > 0 ? (
-                topIssues.map((issue, i) => (
-                  <div key={i} className="flex justify-between items-center">
-                    <span className="text-text-muted capitalize">{issue.category.replace(/_/g, ' ')}</span>
-                    <span className="px-2 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-sm">
-                      {issue.count}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-text-muted text-sm">No data yet</p>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Recent Calls */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-bg-secondary rounded-xl border border-border-primary p-6"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-text-primary">Recent Calls</h2>
-              <Link href="/dashboard/calls" className="text-accent-primary text-sm hover:underline">
-                View all
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {recentCalls.length > 0 ? (
-                recentCalls.map((call) => (
-                  <Link
-                    key={call.id}
-                    href={`/dashboard/calls/${call.id}`}
-                    className="block p-3 rounded-lg hover:bg-bg-tertiary transition-colors"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm text-text-muted">
-                          {new Date(call.started_at).toLocaleString()}
-                        </p>
-                        <p className="text-xs text-text-muted">
-                          {call.duration ? formatDuration(call.duration) : 'N/A'}
-                        </p>
-                      </div>
-                      <SentimentBadge sentiment={call.sentiment} size="sm" />
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <p className="text-text-muted text-sm">No calls yet</p>
-              )}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Trends Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-8 bg-bg-secondary rounded-xl border border-border-primary p-6"
-        >
-          <h2 className="text-lg font-semibold text-text-primary mb-4">Call Volume Trend</h2>
-          {trends.length > 0 ? (
-            <div className="h-64 flex items-end justify-between gap-2">
-              {trends.map((day, i) => {
-                const maxCalls = Math.max(...trends.map((t) => t.calls), 1)
-                const height = Math.max(10, (day.calls / maxCalls) * 200)
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center">
-                    <div
-                      className="w-full bg-accent-primary rounded-t transition-all hover:bg-accent-primary/80"
-                      style={{ height: `${height}px` }}
-                      title={`${day.calls} calls`}
-                    />
-                    <span className="text-xs text-text-muted mt-2">
-                      {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="h-64 flex items-center justify-center text-text-muted">
-              No trend data available
+          {/* Customer Insights Row */}
+          {customerInsights && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <StatsCard
+                title="Unique Customers"
+                value={customerInsights.total_unique_customers || 0}
+                icon={<Users className="w-6 h-6" />}
+                subtitle={`${(customerInsights.repeat_caller_rate || 0).toFixed(1)}% repeat callers`}
+                color="purple"
+              />
+              <StatsCard
+                title="High Risk Customers"
+                value={customerInsights.high_risk_customers || 0}
+                icon={<AlertTriangle className="w-6 h-6" />}
+                subtitle="Requiring attention"
+                color={customerInsights.high_risk_customers > 0 ? 'red' : 'green'}
+              />
+              <StatsCard
+                title="Top Pain Points"
+                value={customerInsights.top_pain_points?.length || 0}
+                icon={<Target className="w-6 h-6" />}
+                subtitle="Issues identified"
+                color="orange"
+              />
             </div>
           )}
-        </motion.div>
 
-        {/* Quick Actions */}
-        <div className="mt-8 flex flex-wrap gap-4">
-          <Link
-            href="/chat"
-            className="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Sentiment Breakdown */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+            >
+              <h2 className="text-lg font-semibold text-text-primary mb-4">Sentiment Breakdown</h2>
+              {totalSentiment > 0 ? (
+                <div className="space-y-4">
+                  {[
+                    { icon: <Smile className="w-5 h-5 text-green-400" />, label: 'Positive', count: sentiment.positive, color: 'bg-green-500' },
+                    { icon: <Meh className="w-5 h-5 text-gray-400" />, label: 'Neutral', count: sentiment.neutral, color: 'bg-gray-500' },
+                    { icon: <Frown className="w-5 h-5 text-red-400" />, label: 'Negative', count: sentiment.negative, color: 'bg-red-500' },
+                  ].map((item) => {
+                    const percentage = totalSentiment > 0 ? (item.count / totalSentiment) * 100 : 0
+                    return (
+                      <div key={item.label} className="flex items-center gap-3">
+                        {item.icon}
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-text-muted">{item.label}</span>
+                            <span className="text-text-primary font-medium">{item.count}</span>
+                          </div>
+                          <div className="h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${item.color}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <EmptyState message="No sentiment data yet" />
+              )}
+            </motion.div>
+
+            {/* Top Issues */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+            >
+              <h2 className="text-lg font-semibold text-text-primary mb-4">Top Issue Categories</h2>
+              {topIssues.length > 0 ? (
+                <div className="space-y-3">
+                  {topIssues.map((issue, i) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span className="text-text-muted capitalize">{issue.category.replace(/_/g, ' ')}</span>
+                      <span className="px-2 py-1 bg-accent-primary/20 text-accent-primary rounded-full text-sm">
+                        {issue.count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState message="No issues recorded yet" />
+              )}
+            </motion.div>
+
+            {/* Recent Calls */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-text-primary">Recent Calls</h2>
+                <Link href="/dashboard/calls" className="text-accent-primary text-sm hover:underline">
+                  View all
+                </Link>
+              </div>
+              {recentCalls.length > 0 ? (
+                <div className="space-y-3">
+                  {recentCalls.map((call) => (
+                    <Link
+                      key={call.id}
+                      href={`/dashboard/calls/${call.id}`}
+                      className="block p-3 rounded-lg hover:bg-bg-tertiary transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm text-text-muted">
+                            {new Date(call.started_at).toLocaleString()}
+                          </p>
+                          <p className="text-xs text-text-muted">
+                            {call.duration ? formatDuration(call.duration) : 'N/A'}
+                          </p>
+                        </div>
+                        <SentimentBadge sentiment={call.sentiment} size="sm" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState message="No calls yet" />
+              )}
+            </motion.div>
+          </div>
+
+          {/* Pain Points & Feature Requests */}
+          {customerInsights && (customerInsights.top_pain_points?.length > 0 || customerInsights.top_feature_requests?.length > 0) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+              {/* Pain Points */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+              >
+                <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-orange-400" />
+                  Top Customer Pain Points
+                </h2>
+                {customerInsights.top_pain_points?.length > 0 ? (
+                  <div className="space-y-3">
+                    {customerInsights.top_pain_points.slice(0, 5).map((item, i) => (
+                      <div key={i} className="flex justify-between items-center">
+                        <span className="text-text-muted text-sm">{item.text}</span>
+                        <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs">
+                          {item.count}x
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-text-muted text-sm">No pain points identified yet</p>
+                )}
+              </motion.div>
+
+              {/* Feature Requests */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+              >
+                <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-yellow-400" />
+                  Top Feature Requests
+                </h2>
+                {customerInsights.top_feature_requests?.length > 0 ? (
+                  <div className="space-y-3">
+                    {customerInsights.top_feature_requests.slice(0, 5).map((item, i) => (
+                      <div key={i} className="flex justify-between items-center">
+                        <span className="text-text-muted text-sm">{item.text}</span>
+                        <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs">
+                          {item.count}x
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-text-muted text-sm">No feature requests captured yet</p>
+                )}
+              </motion.div>
+            </div>
+          )}
+
+          {/* Trends Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8 bg-bg-secondary rounded-xl border border-border-primary p-6"
           >
-            <MessageSquare className="w-4 h-4" />
-            Text Chat
-          </Link>
-          <Link
-            href="/dashboard/calls"
-            className="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
-          >
-            <Phone className="w-4 h-4" />
-            All Calls
-          </Link>
+            <h2 className="text-lg font-semibold text-text-primary mb-4">Call Volume Trend</h2>
+            {trends.length > 0 ? (
+              <div className="h-64 flex items-end justify-between gap-2">
+                {trends.map((day, i) => {
+                  const maxCalls = Math.max(...trends.map((t) => t.calls), 1)
+                  const height = Math.max(10, (day.calls / maxCalls) * 200)
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center">
+                      <div
+                        className="w-full bg-accent-primary rounded-t transition-all hover:bg-accent-primary/80"
+                        style={{ height: `${height}px` }}
+                        title={`${day.calls} calls`}
+                      />
+                      <span className="text-xs text-text-muted mt-2">
+                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center">
+                <EmptyState message="No trend data available" />
+              </div>
+            )}
+          </motion.div>
+
+          {/* Quick Actions */}
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/chat"
+              className="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Text Chat
+            </Link>
+            <Link
+              href="/dashboard/calls"
+              className="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+              All Calls
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
     </AuthenticatedLayout>
   )
 }

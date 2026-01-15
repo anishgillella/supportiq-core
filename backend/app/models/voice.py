@@ -389,3 +389,206 @@ class CumulativeDashboard(BaseModel):
 
     # Recent activity
     recent_calls: List[RecentCall] = Field(default_factory=list)
+
+
+# ========================================
+# ENHANCED ANALYTICS MODELS
+# ========================================
+
+class FeedbackItem(BaseModel):
+    """A single feedback item with occurrence count"""
+    text: str
+    count: int = 1
+    category: Optional[str] = None
+    first_mentioned: Optional[datetime] = None
+    last_mentioned: Optional[datetime] = None
+
+
+class CustomerProfileSummary(BaseModel):
+    """Summary of a customer profile"""
+    id: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    customer_type: CustomerType = CustomerType.UNKNOWN
+    total_calls: int = 0
+    avg_satisfaction: float = 0.0
+    churn_risk_level: str = "low"
+    churn_risk_score: float = 0.0
+    last_call_at: Optional[datetime] = None
+
+
+class CustomerProfileDetail(CustomerProfileSummary):
+    """Detailed customer profile"""
+    account_id: Optional[str] = None
+    company: Optional[str] = None
+    communication_style: str = "neutral"
+    total_call_duration_seconds: int = 0
+    first_call_at: Optional[datetime] = None
+    avg_sentiment_score: float = 0.0
+    pain_points: List[str] = Field(default_factory=list)
+    feature_requests: List[str] = Field(default_factory=list)
+    complaints: List[str] = Field(default_factory=list)
+    compliments: List[str] = Field(default_factory=list)
+    products_mentioned: List[str] = Field(default_factory=list)
+    competitor_mentions: List[str] = Field(default_factory=list)
+    churn_risk_factors: List[str] = Field(default_factory=list)
+    requires_follow_up: bool = False
+    follow_up_reason: Optional[str] = None
+    special_notes: List[str] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
+
+
+class AgentPerformanceDetail(BaseModel):
+    """Detailed agent performance metrics from a call"""
+    call_id: str
+    overall_score: float = 0.0
+    empathy_score: float = 0.0
+    knowledge_score: float = 0.0
+    communication_score: float = 0.0
+    efficiency_score: float = 0.0
+    opening_quality: float = 0.0
+    closing_quality: float = 0.0
+    problem_identification_time_seconds: Optional[float] = None
+    resolution_time_seconds: Optional[float] = None
+    dead_air_seconds: float = 0.0
+    interruptions_count: int = 0
+    strengths: List[str] = Field(default_factory=list)
+    areas_for_improvement: List[str] = Field(default_factory=list)
+    training_recommendations: List[str] = Field(default_factory=list)
+
+
+class EnhancedCallAnalytics(BaseModel):
+    """Complete call analytics with all extracted data"""
+    # Basic Info
+    call_id: str
+    analyzed_at: Optional[datetime] = None
+
+    # Sentiment
+    overall_sentiment: Sentiment
+    sentiment_score: float = Field(ge=-1.0, le=1.0)
+    sentiment_progression: List[SentimentProgression] = Field(default_factory=list)
+
+    # Classification
+    primary_category: str
+    secondary_categories: List[str] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
+
+    # Resolution
+    resolution_status: ResolutionStatus
+    resolution_notes: Optional[str] = None
+
+    # Predictions
+    customer_satisfaction_predicted: float = Field(ge=1.0, le=5.0)
+    nps_predicted: Optional[int] = Field(None, ge=0, le=10)
+
+    # Intent & Topics
+    customer_intent: str
+    key_topics: List[str] = Field(default_factory=list)
+    questions_asked: List[str] = Field(default_factory=list)
+    questions_unanswered: List[str] = Field(default_factory=list)
+
+    # Action Items
+    action_items: List[str] = Field(default_factory=list)
+    commitments_made: List[str] = Field(default_factory=list)
+
+    # Quality
+    improvement_suggestions: List[str] = Field(default_factory=list)
+    knowledge_gaps: List[str] = Field(default_factory=list)
+
+    # Summary
+    call_summary: str
+    one_line_summary: Optional[str] = None
+
+    # Agent Performance (embedded)
+    agent_performance: Optional[AgentPerformance] = None
+
+    # Conversation Flow (embedded)
+    conversation_flow: Optional[ConversationFlow] = None
+
+    # Customer Profile (embedded)
+    customer_profile: Optional[CustomerProfile] = None
+
+
+class EnhancedAnalyticsSummary(BaseModel):
+    """Enhanced cumulative analytics with real data"""
+    # Period Info
+    period_type: str  # daily, weekly, monthly, all_time
+    period_start: str
+    period_end: str
+
+    # Call Volume
+    total_calls: int = 0
+    completed_calls: int = 0
+    abandoned_calls: int = 0
+    escalated_calls: int = 0
+
+    # Duration
+    total_duration_seconds: int = 0
+    avg_duration_seconds: float = 0.0
+
+    # Resolution
+    resolved_calls: int = 0
+    first_call_resolution_count: int = 0
+    resolution_rate: float = 0.0
+    first_call_resolution_rate: float = 0.0
+
+    # Sentiment
+    sentiment_breakdown: SentimentBreakdown = Field(default_factory=SentimentBreakdown)
+    avg_sentiment_score: float = 0.0
+
+    # Customer Satisfaction
+    avg_csat_score: float = 0.0
+    avg_nps_score: float = 0.0
+
+    # Agent Performance
+    avg_agent_score: float = 0.0
+
+    # Customer Risk
+    high_risk_customer_count: int = 0
+    avg_churn_risk_score: float = 0.0
+
+    # Category Breakdown
+    category_breakdown: Dict[str, int] = Field(default_factory=dict)
+
+    # Top Feedback Items
+    top_pain_points: List[FeedbackItem] = Field(default_factory=list)
+    top_feature_requests: List[FeedbackItem] = Field(default_factory=list)
+    top_complaints: List[FeedbackItem] = Field(default_factory=list)
+    top_knowledge_gaps: List[FeedbackItem] = Field(default_factory=list)
+
+    # Comparisons (vs previous period)
+    calls_change_percent: float = 0.0
+    resolution_change_percent: float = 0.0
+    sentiment_change_percent: float = 0.0
+
+
+class CustomerListResponse(BaseModel):
+    """Paginated customer list"""
+    customers: List[CustomerProfileSummary]
+    total: int
+    page: int
+    page_size: int
+
+
+class HighRiskCustomer(BaseModel):
+    """High risk customer summary"""
+    id: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    churn_risk_score: float
+    churn_risk_factors: List[str] = Field(default_factory=list)
+    recommended_actions: List[str] = Field(default_factory=list)
+    last_call_at: Optional[datetime] = None
+    total_calls: int = 0
+
+
+class ActionItemSummary(BaseModel):
+    """Summary of pending action items"""
+    call_id: str
+    call_date: datetime
+    customer_name: Optional[str] = None
+    action_items: List[str]
+    commitments_made: List[str]
+    follow_up_deadline: Optional[str] = None
