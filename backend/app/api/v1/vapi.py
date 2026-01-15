@@ -108,6 +108,40 @@ async def handle_assistant_request(body: dict) -> dict:
 
 
 # ========================================
+# HELPER: EXTRACT USER ID FROM CALL METADATA
+# ========================================
+
+def extract_user_id_from_body(body: dict) -> str:
+    """
+    Extract user_id from VAPI webhook body.
+    The user_id is passed in call metadata when the call is initiated.
+    Returns the user_id or None if not found.
+    """
+    # Try different paths where metadata might be
+    message = body.get("message", {})
+    call_data = message.get("call", {})
+
+    # Primary path: call.metadata.user_id
+    metadata = call_data.get("metadata", {})
+    user_id = metadata.get("user_id")
+
+    if user_id:
+        print(f"[VAPI] Found user_id in call metadata: {user_id}")
+        return user_id
+
+    # Fallback: check top-level call object
+    if "call" in body:
+        metadata = body["call"].get("metadata", {})
+        user_id = metadata.get("user_id")
+        if user_id:
+            print(f"[VAPI] Found user_id in top-level call: {user_id}")
+            return user_id
+
+    print("[VAPI] No user_id found in call metadata")
+    return None
+
+
+# ========================================
 # HANDLER: FUNCTION CALL (RAG SEARCH)
 # ========================================
 
@@ -115,6 +149,9 @@ async def handle_function_call(body: dict) -> dict:
     """
     Handle function calls from the assistant.
     Primary use: search_knowledge_base for RAG.
+
+    Uses the user_id from call metadata to search the correct
+    knowledge base namespace (user-isolated data).
     """
     try:
         message = body.get("message", {})
@@ -122,7 +159,10 @@ async def handle_function_call(body: dict) -> dict:
         function_name = function_call.get("name")
         parameters = function_call.get("parameters", {})
 
-        print(f"Function call: {function_name} with params: {parameters}")
+        # Extract user_id from call metadata for namespace isolation
+        user_id = extract_user_id_from_body(body)
+
+        print(f"Function call: {function_name} with params: {parameters}, user_id: {user_id}")
 
         if function_name == "search_knowledge_base":
             query = parameters.get("query", "")
@@ -132,15 +172,20 @@ async def handle_function_call(body: dict) -> dict:
                     "result": "I need more information to search. Could you please clarify your question?"
                 }
 
+            # Determine which namespace to search
+            # If user_id is available, search their specific namespace
+            # Otherwise fall back to default (for backwards compatibility)
+            namespace = user_id if user_id else "default"
+            print(f"[RAG] Searching knowledge base in namespace: {namespace}")
+
             try:
                 # Generate embedding for query
                 query_embedding = get_embedding(query)
 
-                # Search Pinecone - use a default namespace or get from metadata
-                # For now, we'll search across all namespaces
+                # Search Pinecone with user-specific namespace
                 results = query_vectors(
                     query_embedding=query_embedding,
-                    namespace="default",  # Could be made dynamic
+                    namespace=namespace,
                     top_k=3
                 )
 
@@ -186,7 +231,7 @@ async def handle_end_of_call(body: dict):
     """
     Process the end-of-call report from VAPI.
 
-    1. Store call metadata
+    1. Store call metadata (including user_id for data isolation)
     2. Store transcript
     3. Trigger AI analysis
     """
@@ -199,6 +244,10 @@ async def handle_end_of_call(body: dict):
         if not vapi_call_id:
             print("No call ID in end-of-call report")
             return
+
+        # Extract user_id from metadata to associate call with the user
+        user_id = extract_user_id_from_body(body)
+        print(f"[END OF CALL] Processing call for user_id: {user_id}")
 
         started_at = call_data.get("startedAt")
         ended_at = call_data.get("endedAt")
@@ -226,9 +275,9 @@ async def handle_end_of_call(body: dict):
         elif duration and duration < 10:
             status = "abandoned"
 
-        print(f"Processing call {vapi_call_id}: status={status}, duration={duration}s, messages={len(messages)}")
+        print(f"Processing call {vapi_call_id}: status={status}, duration={duration}s, messages={len(messages)}, user_id={user_id}")
 
-        # Create call record
+        # Create call record with user association
         call_record = await create_call(
             vapi_call_id=vapi_call_id,
             started_at=started_at,
@@ -237,7 +286,8 @@ async def handle_end_of_call(body: dict):
             status=status,
             agent_type="general",
             recording_url=call_data.get("recordingUrl"),
-            vapi_assistant_id=call_data.get("assistantId")
+            vapi_assistant_id=call_data.get("assistantId"),
+            caller_id=user_id  # Associate call with the user who initiated it
         )
 
         if not call_record:

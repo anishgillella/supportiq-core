@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, Globe, FileText, Trash2, Loader2, Plus, Database, MessageSquare } from 'lucide-react'
+import { Upload, Globe, FileText, Trash2, Loader2, Plus, Database, MessageSquare, Phone, PhoneCall, PhoneOff, Mic, MicOff } from 'lucide-react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { api } from '@/lib/api'
+import Vapi from '@vapi-ai/web'
 
 interface Document {
   id: string
@@ -16,9 +17,13 @@ interface Document {
   created_at: string
 }
 
+// VAPI Configuration - loaded from environment variables
+const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY!
+const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!
+
 export default function KnowledgePage() {
   const router = useRouter()
-  const { token } = useOnboardingStore()
+  const { token, userId } = useOnboardingStore()
   const [documents, setDocuments] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
@@ -26,14 +31,83 @@ export default function KnowledgePage() {
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Voice call state
+  const [showCallModal, setShowCallModal] = useState(false)
+  const [isCallActive, setIsCallActive] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [volumeLevel, setVolumeLevel] = useState(0)
+  const [callStatus, setCallStatus] = useState<string>('Ready to call')
+  const vapiRef = useRef<Vapi | null>(null)
+
+  // Initialize VAPI
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !vapiRef.current) {
+      vapiRef.current = new Vapi(VAPI_PUBLIC_KEY)
+
+      // Set up event listeners
+      vapiRef.current.on('call-start', () => {
+        setIsCallActive(true)
+        setIsConnecting(false)
+        setCallStatus('Connected - Speak now')
+      })
+
+      vapiRef.current.on('call-end', () => {
+        setIsCallActive(false)
+        setIsConnecting(false)
+        setCallStatus('Call ended')
+        setVolumeLevel(0)
+        setTimeout(() => {
+          setShowCallModal(false)
+          setCallStatus('Ready to call')
+        }, 2000)
+      })
+
+      vapiRef.current.on('volume-level', (level: number) => {
+        setVolumeLevel(level)
+      })
+
+      vapiRef.current.on('error', (error: any) => {
+        console.error('VAPI Error:', JSON.stringify(error, null, 2))
+        const errorMessage = error?.message || error?.error?.message || 'Connection failed'
+        setCallStatus(`Error: ${errorMessage}`)
+        setIsConnecting(false)
+        setIsCallActive(false)
+      })
+
+      vapiRef.current.on('speech-start', () => {
+        setCallStatus('Assistant is speaking...')
+      })
+
+      vapiRef.current.on('speech-end', () => {
+        setCallStatus('Listening...')
+      })
+    }
+
+    return () => {
+      if (vapiRef.current) {
+        vapiRef.current.stop()
+      }
+    }
+  }, [])
+
+  // Wait for Zustand to hydrate from localStorage
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
 
   useEffect(() => {
+    // Don't redirect until hydration is complete
+    if (!isHydrated) return
+
     if (!token) {
       router.push('/login')
       return
     }
     loadDocuments()
-  }, [token, router])
+  }, [token, router, isHydrated])
 
   const loadDocuments = async () => {
     if (!token) return
@@ -95,7 +169,49 @@ export default function KnowledgePage() {
     }
   }
 
-  if (!token) return null
+  const handleStartCall = useCallback(async () => {
+    if (!vapiRef.current) return
+
+    setShowCallModal(true)
+    setIsConnecting(true)
+    setCallStatus('Connecting...')
+
+    try {
+      await vapiRef.current.start(VAPI_ASSISTANT_ID, {
+        metadata: {
+          user_id: userId,
+          initiated_from: 'knowledge_base'
+        }
+      })
+    } catch (err) {
+      console.error('Failed to start call:', err)
+      setCallStatus('Failed to connect')
+      setIsConnecting(false)
+    }
+  }, [userId])
+
+  const handleEndCall = useCallback(() => {
+    if (vapiRef.current) {
+      vapiRef.current.stop()
+    }
+  }, [])
+
+  const handleToggleMute = useCallback(() => {
+    if (vapiRef.current) {
+      const newMuted = !isMuted
+      vapiRef.current.setMuted(newMuted)
+      setIsMuted(newMuted)
+    }
+  }, [isMuted])
+
+  // Show loading while hydrating or if no token yet
+  if (!isHydrated || !token) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
@@ -112,6 +228,15 @@ export default function KnowledgePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleStartCall}
+              disabled={documents.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              title={documents.length === 0 ? 'Add documents first to use voice agent' : 'Start a voice call with your AI agent'}
+            >
+              <PhoneCall className="w-4 h-4" />
+              Start Call
+            </button>
             <button
               onClick={() => router.push('/chat')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-primary text-text-secondary hover:bg-bg-tertiary transition-colors"
@@ -207,6 +332,111 @@ export default function KnowledgePage() {
           </div>
         )}
       </main>
+
+      {/* Voice Call Modal */}
+      <AnimatePresence>
+        {showCallModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-bg-secondary rounded-2xl border border-border-primary p-8 max-w-sm w-full text-center"
+            >
+              {/* Voice visualization */}
+              <div className="relative w-32 h-32 mx-auto mb-6">
+                {/* Pulsing rings based on volume */}
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-green-500/20"
+                  animate={{
+                    scale: isCallActive ? [1, 1.2 + volumeLevel * 0.5, 1] : 1,
+                    opacity: isCallActive ? [0.5, 0.2, 0.5] : 0.3,
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: isCallActive ? Infinity : 0,
+                    ease: 'easeInOut',
+                  }}
+                />
+                <motion.div
+                  className="absolute inset-2 rounded-full bg-green-500/30"
+                  animate={{
+                    scale: isCallActive ? [1, 1.1 + volumeLevel * 0.3, 1] : 1,
+                    opacity: isCallActive ? [0.6, 0.3, 0.6] : 0.4,
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: isCallActive ? Infinity : 0,
+                    ease: 'easeInOut',
+                    delay: 0.1,
+                  }}
+                />
+                {/* Center icon */}
+                <div className={`absolute inset-4 rounded-full flex items-center justify-center ${
+                  isCallActive ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
+                  isConnecting ? 'bg-gradient-to-br from-yellow-500 to-orange-500' :
+                  'bg-gradient-to-br from-gray-500 to-gray-600'
+                }`}>
+                  {isConnecting ? (
+                    <Loader2 className="w-10 h-10 text-white animate-spin" />
+                  ) : isCallActive ? (
+                    <Phone className="w-10 h-10 text-white" />
+                  ) : (
+                    <PhoneOff className="w-10 h-10 text-white" />
+                  )}
+                </div>
+              </div>
+
+              {/* Status text */}
+              <h3 className="text-lg font-semibold text-text-primary mb-2">
+                Voice Assistant
+              </h3>
+              <p className="text-sm text-text-muted mb-6">
+                {callStatus}
+              </p>
+
+              {/* Controls */}
+              <div className="flex items-center justify-center gap-4">
+                {isCallActive && (
+                  <button
+                    onClick={handleToggleMute}
+                    className={`p-4 rounded-full transition-colors ${
+                      isMuted
+                        ? 'bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30'
+                        : 'bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80'
+                    }`}
+                    title={isMuted ? 'Unmute' : 'Mute'}
+                  >
+                    {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                  </button>
+                )}
+
+                {isCallActive || isConnecting ? (
+                  <button
+                    onClick={handleEndCall}
+                    className="p-4 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                    title="End call"
+                  >
+                    <PhoneOff className="w-6 h-6" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowCallModal(false)}
+                    className="px-6 py-3 rounded-lg border border-border-primary text-text-secondary hover:bg-bg-tertiary transition-colors"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add Content Modal */}
       <AnimatePresence>

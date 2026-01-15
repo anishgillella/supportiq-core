@@ -201,7 +201,7 @@ class ApiClient {
           birthdate: string | null
         } | null
       }>
-    >('/users')
+    >('/supportiq_users')
   }
 
   // ========================================
@@ -309,6 +309,23 @@ class ApiClient {
       } | null
       recording_url: string | null
     }>(`/voice/calls/${callId}`)
+  }
+
+  // Voice call initiation
+  async initiateCall(token: string, phoneNumber?: string, assistantId?: string) {
+    return this.request<{
+      success: boolean
+      call_id: string | null
+      web_call_url: string | null
+      message: string
+    }>('/voice/calls/initiate', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({
+        phone_number: phoneNumber,
+        assistant_id: assistantId,
+      }),
+    })
   }
 
   async getCumulativeDashboard() {

@@ -123,9 +123,13 @@ async def list_calls(
     category: Optional[str] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
+    user_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     List calls with optional filtering.
+
+    Args:
+        user_id: If provided, only return calls for this user (data isolation)
     """
     try:
         supabase = get_supabase()
@@ -136,7 +140,11 @@ async def list_calls(
             count="exact"
         )
 
-        # Apply filters
+        # Apply user filter for data isolation
+        if user_id:
+            query = query.eq("caller_id", user_id)
+
+        # Apply other filters
         if status:
             query = query.eq("status", status)
         if date_from:

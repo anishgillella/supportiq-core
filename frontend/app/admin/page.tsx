@@ -63,21 +63,30 @@ export default function AdminPage() {
     const setOtherPage = page === 2 ? setPage3Components : setPage2Components
 
     if (currentPage.includes(id)) {
-      // Only remove if page will still have at least 1 component
-      if (currentPage.length > 1) {
-        setCurrentPage(currentPage.filter((c) => c !== id))
+      // Prevent removing if page will have 0 components - show warning
+      if (currentPage.length <= 1) {
+        setSaveError(`Page ${page} must have at least one component`)
+        setTimeout(() => setSaveError(null), 3000)
+        return
       }
+      setCurrentPage(currentPage.filter((c) => c !== id))
     } else {
       // Only add if total per page <= 2
       if (currentPage.length < 2) {
-        // Remove from other page if it was there
+        // Remove from other page if it was there (but check it won't leave that page empty)
         if (otherPage.includes(id)) {
+          if (otherPage.length <= 1) {
+            setSaveError(`Cannot move: Page ${page === 2 ? 3 : 2} must have at least one component`)
+            setTimeout(() => setSaveError(null), 3000)
+            return
+          }
           setOtherPage(otherPage.filter((c) => c !== id))
         }
         setCurrentPage([...currentPage, id])
       }
     }
     setSaveSuccess(false)
+    setSaveError(null)
   }
 
   const handleSave = async () => {
