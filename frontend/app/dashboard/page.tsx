@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 
 interface DashboardData {
   overview: {
@@ -167,14 +168,17 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
+      <AuthenticatedLayout>
       <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary" />
       </div>
+      </AuthenticatedLayout>
     )
   }
 
   if (error) {
     return (
+      <AuthenticatedLayout>
       <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
         <p className="text-text-muted">{error}</p>
@@ -185,6 +189,7 @@ export default function DashboardPage() {
           Retry
         </button>
       </div>
+      </AuthenticatedLayout>
     )
   }
 
@@ -206,17 +211,12 @@ export default function DashboardPage() {
   const totalSentiment = sentiment.positive + sentiment.neutral + sentiment.negative + sentiment.mixed
 
   return (
+    <AuthenticatedLayout>
     <div className="min-h-screen bg-bg-primary p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <Link
-              href="/chat"
-              className="p-2 rounded-lg hover:bg-bg-secondary transition-colors text-text-muted hover:text-text-primary"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
             <div>
               <h1 className="text-3xl font-bold text-text-primary flex items-center gap-3">
                 <BarChart3 className="w-8 h-8 text-accent-primary" />
@@ -430,5 +430,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </AuthenticatedLayout>
   )
 }

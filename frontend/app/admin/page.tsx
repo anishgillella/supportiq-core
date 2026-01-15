@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAdminConfig, ComponentType } from '@/hooks/use-admin-config'
+import { PublicLayout } from '@/components/layout/public-layout'
 
 interface ComponentOption {
   id: ComponentType
@@ -116,14 +117,17 @@ export default function AdminPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary" />
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary" />
+        </div>
+      </PublicLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary py-12 px-4">
+    <PublicLayout>
+      <div className="min-h-screen bg-bg-primary py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
@@ -380,5 +384,6 @@ export default function AdminPage() {
         </motion.div>
       </div>
     </div>
+    </PublicLayout>
   )
 }

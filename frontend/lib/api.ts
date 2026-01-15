@@ -83,6 +83,7 @@ class ApiClient {
         id: string
         title: string
         source: string
+        source_type: string
         chunks_count: number
         created_at: string
       }>

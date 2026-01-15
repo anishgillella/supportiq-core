@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Bot, User, Sparkles, FileText, Loader2, Database } from 'lucide-react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
 import { api } from '@/lib/api'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -22,12 +23,6 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [showSources, setShowSources] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!token) {
-      router.push('/login')
-    }
-  }, [token, router])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -60,11 +55,8 @@ export default function ChatPage() {
     }
   }
 
-  if (!token) {
-    return null
-  }
-
   return (
+    <AuthenticatedLayout>
     <div className="min-h-screen bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary flex flex-col">
       {/* Header */}
       <header className="border-b border-border-primary bg-bg-secondary/50 backdrop-blur-sm">
@@ -250,5 +242,6 @@ export default function ChatPage() {
         </form>
       </div>
     </div>
+    </AuthenticatedLayout>
   )
 }
