@@ -4,11 +4,12 @@ Analytics API Router
 Endpoints for retrieving aggregated analytics and dashboard data.
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from typing import Optional
 from datetime import datetime, timedelta
 
 from app.core.database import get_supabase
+from app.core.security import get_current_user, TokenData
 from app.models.voice import (
     AnalyticsDashboard,
     OverviewStats,
@@ -28,18 +29,23 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 @router.get("/dashboard", response_model=AnalyticsDashboard)
 async def get_dashboard(
-    days: int = Query(7, ge=1, le=90, description="Number of days to analyze")
+    days: int = Query(7, ge=1, le=90, description="Number of days to analyze"),
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
-    Get comprehensive analytics dashboard data.
+    Get comprehensive analytics dashboard data for the current user.
+
+    Each user only sees analytics for their own calls (data isolation).
     """
     supabase = get_supabase()
     start_date = datetime.utcnow() - timedelta(days=days)
 
-    # Get calls with analytics
+    # Get calls with analytics - filtered by user
     result = supabase.table("supportiq_voice_calls").select(
         "*, supportiq_call_analytics(*)"
-    ).gte("started_at", start_date.isoformat()).order(
+    ).eq("caller_id", current_user.user_id).gte(
+        "started_at", start_date.isoformat()
+    ).order(
         "started_at", desc=True
     ).execute()
 
