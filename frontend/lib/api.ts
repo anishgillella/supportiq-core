@@ -498,6 +498,198 @@ class ApiClient {
       top_training_recommendations: Array<{ text: string; count: number }>
     }>(`/analytics/agent-performance-summary?days=${days}`, { token })
   }
+
+  // ========================================
+  // GRANULAR ANALYTICS ENDPOINTS
+  // ========================================
+
+  async getTimeBasedAnalytics(token: string, days: number = 30) {
+    return this.request<{
+      hourly_distribution: Record<number, { calls: number; avg_sentiment: number }>
+      day_of_week_distribution: Record<string, { calls: number; avg_duration: number }>
+      peak_hours: Array<{ hour: number; calls: number }>
+      total_calls: number
+      days_analyzed: number
+    }>(`/analytics/time-based?days=${days}`, { token })
+  }
+
+  async getEffortScoreAnalytics(token: string, days: number = 30) {
+    return this.request<{
+      ces_distribution: Record<number, number>
+      average_ces: number
+      repeat_rate_percent: number
+      average_transfers: number
+      total_calls_with_repeats: number
+      ces_trend: Array<{ date: string; avg_ces: number; calls: number }>
+      total_calls: number
+      ces_breakdown: {
+        effortless: number
+        moderate: number
+        high_effort: number
+      }
+    }>(`/analytics/effort-scores?days=${days}`, { token })
+  }
+
+  async getEscalationAnalytics(token: string, days: number = 30) {
+    return this.request<{
+      total_calls: number
+      escalated_calls: number
+      escalation_rate_percent: number
+      escalation_resolution_rate_percent: number
+      escalation_levels: Record<string, number>
+      top_escalation_reasons: Array<{ reason: string; count: number }>
+      top_departments: Array<{ department: string; count: number }>
+      categories_leading_to_escalation: Array<{ category: string; count: number }>
+    }>(`/analytics/escalation-analytics?days=${days}`, { token })
+  }
+
+  async getCompetitiveIntelligence(token: string, days: number = 30) {
+    return this.request<{
+      total_calls: number
+      calls_with_competitor_mentions: number
+      competitor_mention_rate_percent: number
+      switching_intent_rate_percent: number
+      switching_intent_count: number
+      top_competitors: Array<{ name: string; mentions: number }>
+      top_comparison_requests: Array<{ comparison: string; count: number }>
+      price_sensitivity_distribution: Record<string, number>
+    }>(`/analytics/competitive-intelligence?days=${days}`, { token })
+  }
+
+  async getProductAnalytics(token: string, days: number = 30) {
+    return this.request<{
+      total_calls: number
+      upsell_opportunities: number
+      upsell_opportunity_rate_percent: number
+      top_products_discussed: Array<{ product: string; mentions: number }>
+      top_features_requested: Array<{ feature: string; requests: number }>
+      top_problematic_features: Array<{ feature: string; issues: number }>
+      top_cross_sell_suggestions: Array<{ suggestion: string; count: number }>
+    }>(`/analytics/product-analytics?days=${days}`, { token })
+  }
+
+  async getConversationQualityAnalytics(token: string, days: number = 30) {
+    return this.request<{
+      total_calls: number
+      average_clarity_score: number
+      average_empathy_phrases: number
+      average_jargon_usage: number
+      average_response_time_seconds: number
+      average_agent_wpm: number
+      average_customer_wpm: number
+      average_agent_talk_percentage: number
+      average_hold_time_seconds: number
+      calls_with_high_clarity: number
+      calls_with_low_clarity: number
+    }>(`/analytics/conversation-quality?days=${days}`, { token })
+  }
+
+  // ========================================
+  // TICKETS API
+  // ========================================
+
+  async getTickets(token: string, params?: {
+    page?: number
+    pageSize?: number
+    status?: string
+    priority?: string
+    category?: string
+  }) {
+    const query = new URLSearchParams()
+    if (params?.page) query.set('page', params.page.toString())
+    if (params?.pageSize) query.set('page_size', params.pageSize.toString())
+    if (params?.status) query.set('status', params.status)
+    if (params?.priority) query.set('priority', params.priority)
+    if (params?.category) query.set('category', params.category)
+
+    return this.request<{
+      tickets: Array<{
+        id: string
+        title: string
+        description: string | null
+        status: string
+        priority: string
+        category: string | null
+        call_id: string | null
+        user_id: string | null
+        customer_name: string | null
+        customer_email: string | null
+        customer_phone: string | null
+        created_at: string
+        updated_at: string
+        resolved_at: string | null
+      }>
+      total: number
+      page: number
+      page_size: number
+    }>(`/tickets?${query}`, { token })
+  }
+
+  async getTicketStats(token: string) {
+    return this.request<{
+      total: number
+      open: number
+      in_progress: number
+      resolved: number
+      closed: number
+      by_priority: {
+        low: number
+        medium: number
+        high: number
+        critical: number
+      }
+      by_category: Record<string, number>
+      avg_resolution_time_hours: number | null
+      tickets_today: number
+      tickets_this_week: number
+    }>('/tickets/stats', { token })
+  }
+
+  async getTicketDetail(token: string, ticketId: string) {
+    return this.request<{
+      id: string
+      title: string
+      description: string | null
+      status: string
+      priority: string
+      category: string | null
+      call_id: string | null
+      user_id: string | null
+      customer_name: string | null
+      customer_email: string | null
+      customer_phone: string | null
+      created_at: string
+      updated_at: string
+      resolved_at: string | null
+      action_items: string[] | null
+      call?: {
+        id: string
+        vapi_call_id: string
+        started_at: string
+        duration_seconds: number | null
+        sentiment: string | null
+      }
+    }>(`/tickets/${ticketId}`, { token })
+  }
+
+  async updateTicket(token: string, ticketId: string, updates: {
+    status?: string
+    priority?: string
+    title?: string
+    description?: string
+  }) {
+    return this.request<{
+      id: string
+      title: string
+      status: string
+      priority: string
+      updated_at: string
+    }>(`/tickets/${ticketId}`, {
+      method: 'PATCH',
+      token,
+      body: JSON.stringify(updates),
+    })
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)

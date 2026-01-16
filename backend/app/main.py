@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import auth, progress, admin, users, knowledge, chat, vapi, voice_calls, analytics
+from app.api.v1 import auth, progress, admin, users, knowledge, chat, vapi, voice_calls, analytics, tickets
 
 app = FastAPI(
     title="SupportIQ Onboarding API",
@@ -32,6 +32,7 @@ app.include_router(chat.router, prefix="/api/v1")
 app.include_router(vapi.router, prefix="/api/v1")
 app.include_router(voice_calls.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
+app.include_router(tickets.router, prefix="/api/v1")
 
 
 @app.get("/")

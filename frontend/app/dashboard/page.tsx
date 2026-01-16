@@ -20,6 +20,11 @@ import {
   AlertTriangle,
   Lightbulb,
   Target,
+  Trophy,
+  Award,
+  Medal,
+  BookOpen,
+  Building2,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
@@ -59,6 +64,20 @@ interface DashboardData {
   }>
 }
 
+interface AgentLeaderboardItem {
+  agent_type: string
+  total_calls: number
+  avg_score: number
+  avg_resolution_rate: number
+  avg_csat: number
+}
+
+interface KnowledgeGapItem {
+  text: string
+  count: number
+  category?: string | null
+}
+
 interface CumulativeData {
   customer_insights: {
     total_unique_customers: number
@@ -66,7 +85,9 @@ interface CumulativeData {
     high_risk_customers: number
     top_pain_points: Array<{ text: string; count: number }>
     top_feature_requests: Array<{ text: string; count: number }>
+    top_complaints: Array<{ text: string; count: number }>
   }
+  agent_leaderboard: AgentLeaderboardItem[]
 }
 
 function formatDuration(seconds: number): string {
@@ -174,6 +195,7 @@ export default function DashboardPage() {
   const { token } = useOnboardingStore()
   const [data, setData] = useState<DashboardData | null>(null)
   const [cumulativeData, setCumulativeData] = useState<CumulativeData | null>(null)
+  const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGapItem[]>([])
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState(7)
 
@@ -185,12 +207,14 @@ export default function DashboardPage() {
 
     try {
       setLoading(true)
-      const [dashboardResult, cumulativeResult] = await Promise.all([
+      const [dashboardResult, cumulativeResult, knowledgeGapsResult] = await Promise.all([
         api.getAnalyticsDashboard(token, dateRange).catch(() => null),
         api.getCumulativeDashboard(token).catch(() => null),
+        api.getKnowledgeGaps(token).catch(() => []),
       ])
       setData(dashboardResult)
       setCumulativeData(cumulativeResult)
+      setKnowledgeGaps(knowledgeGapsResult || [])
     } catch (e) {
       console.error('Failed to load dashboard data:', e)
     } finally {
@@ -228,6 +252,8 @@ export default function DashboardPage() {
   const topIssues = data?.top_issues || []
   const recentCalls = data?.recent_calls || []
   const customerInsights = cumulativeData?.customer_insights
+
+  const agentLeaderboard = cumulativeData?.agent_leaderboard || []
 
   const totalSentiment = sentiment.positive + sentiment.neutral + sentiment.negative + sentiment.mixed
 
@@ -488,11 +514,114 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Agent Leaderboard & Knowledge Gaps */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            {/* Agent Leaderboard */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+            >
+              <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-400" />
+                Agent Performance Leaderboard
+              </h2>
+              {agentLeaderboard.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-xs text-text-muted border-b border-border-primary">
+                        <th className="pb-2 pr-4">Rank</th>
+                        <th className="pb-2 pr-4">Agent</th>
+                        <th className="pb-2 pr-4">Calls</th>
+                        <th className="pb-2 pr-4">Score</th>
+                        <th className="pb-2 pr-4">Resolution</th>
+                        <th className="pb-2">CSAT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {agentLeaderboard.slice(0, 5).map((agent, index) => (
+                        <tr key={agent.agent_type} className="text-sm border-b border-border-primary/50 last:border-0">
+                          <td className="py-3 pr-4">
+                            {index === 0 ? (
+                              <span className="inline-flex items-center justify-center w-6 h-6 bg-yellow-500/20 rounded-full">
+                                <Trophy className="w-3 h-3 text-yellow-400" />
+                              </span>
+                            ) : index === 1 ? (
+                              <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-400/20 rounded-full">
+                                <Medal className="w-3 h-3 text-gray-400" />
+                              </span>
+                            ) : index === 2 ? (
+                              <span className="inline-flex items-center justify-center w-6 h-6 bg-orange-500/20 rounded-full">
+                                <Award className="w-3 h-3 text-orange-400" />
+                              </span>
+                            ) : (
+                              <span className="text-text-muted pl-2">{index + 1}</span>
+                            )}
+                          </td>
+                          <td className="py-3 pr-4 text-text-primary font-medium capitalize">
+                            {agent.agent_type.replace(/_/g, ' ')}
+                          </td>
+                          <td className="py-3 pr-4 text-text-muted">{agent.total_calls}</td>
+                          <td className="py-3 pr-4">
+                            <span className={`${agent.avg_score >= 80 ? 'text-green-400' : agent.avg_score >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
+                              {agent.avg_score.toFixed(0)}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4 text-text-muted">{(agent.avg_resolution_rate * 100).toFixed(0)}%</td>
+                          <td className="py-3 text-text-muted">{agent.avg_csat.toFixed(1)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <EmptyState message="No agent performance data yet" />
+              )}
+            </motion.div>
+
+            {/* Knowledge Gaps / Training Priorities */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+            >
+              <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-red-400" />
+                Training Priorities
+              </h2>
+              <p className="text-xs text-text-muted mb-4">Topics where agents need more support</p>
+              {knowledgeGaps.length > 0 ? (
+                <div className="space-y-3">
+                  {knowledgeGaps.slice(0, 6).map((gap, i) => (
+                    <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-red-500/5 border border-red-500/20">
+                      <div className="flex-1">
+                        <span className="text-text-muted text-sm">{gap.text}</span>
+                        {gap.category && (
+                          <span className="ml-2 text-xs text-text-muted/60 capitalize">
+                            ({gap.category.replace(/_/g, ' ')})
+                          </span>
+                        )}
+                      </div>
+                      <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium">
+                        {gap.count}x
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState message="No training gaps identified yet" />
+              )}
+            </motion.div>
+          </div>
+
           {/* Trends Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.7 }}
             className="mt-8 bg-bg-secondary rounded-xl border border-border-primary p-6"
           >
             <h2 className="text-lg font-semibold text-text-primary mb-4">Call Volume Trend</h2>
@@ -524,6 +653,13 @@ export default function DashboardPage() {
 
           {/* Quick Actions */}
           <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/dashboard/advanced"
+              className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/90 transition-colors"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Advanced Analytics
+            </Link>
             <Link
               href="/chat"
               className="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"

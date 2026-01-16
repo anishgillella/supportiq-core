@@ -243,7 +243,7 @@ async def store_analytics(call_id: str, analytics: Dict[str, Any]) -> bool:
             "action_items": analytics.get("action_items", []),
             "improvement_suggestions": analytics.get("improvement_suggestions", []),
             "call_summary": analytics.get("call_summary", ""),
-            "analysis_model": analytics.get("analysis_model", "google/gemini-2.5-flash-preview"),
+            "analysis_model": analytics.get("analysis_model", "google/gemini-2.5-flash"),
             "analysis_version": "1.0"
         }
 

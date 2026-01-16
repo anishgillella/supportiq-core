@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     vapi_assistant_id: str = ""
 
     # Analysis model (for transcript analysis)
-    analysis_model: str = "google/gemini-2.5-flash-preview"
+    analysis_model: str = "google/gemini-2.5-flash"
 
     class Config:
         env_file = "/Users/anishgillella/conductor/workspaces/supportiq-core/.env"
