@@ -20,6 +20,7 @@ import {
   Tag,
   MessageSquare,
   TrendingUp,
+  MessagesSquare,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
@@ -352,7 +353,16 @@ export default function CallDetailPage() {
               <h1 className="text-2xl font-bold text-text-primary">Call Details</h1>
               <p className="text-text-muted">{new Date(call.started_at).toLocaleString()}</p>
             </div>
-            <SentimentBadge sentiment={analytics?.overall_sentiment} size="lg" />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push(`/chat?context=call&callId=${call.id}`)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-primary text-white hover:bg-accent-primary/90 transition-colors text-sm font-medium"
+              >
+                <MessagesSquare className="w-4 h-4" />
+                Chat about this call
+              </button>
+              <SentimentBadge sentiment={analytics?.overall_sentiment} size="lg" />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">

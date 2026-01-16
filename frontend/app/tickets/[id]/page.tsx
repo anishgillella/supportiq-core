@@ -20,6 +20,7 @@ import {
   Tag,
   FileText,
   CheckSquare,
+  MessagesSquare,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
@@ -27,30 +28,27 @@ import { useOnboardingStore } from '@/stores/onboarding-store'
 
 interface TicketDetail {
   id: string
-  call_id: string
-  user_id: string
+  call_id: string | null
+  user_id: string | null
   title: string
-  description: string
-  category: string
+  description: string | null
+  category: string | null
   priority: string
   status: string
   customer_email: string | null
   customer_name: string | null
-  sentiment_score: number | null
-  resolution_status: string | null
-  customer_satisfaction_predicted: number | null
-  action_items: string[]
-  key_topics: string[]
+  customer_phone: string | null
+  action_items: string[] | null
   created_at: string
   updated_at: string
   resolved_at: string | null
-  supportiq_voice_calls: {
+  call?: {
     id: string
     vapi_call_id: string
     started_at: string
     duration_seconds: number | null
-    status: string
-  } | null
+    sentiment: string | null
+  }
 }
 
 function PriorityBadge({ priority }: { priority: string }) {
@@ -190,7 +188,9 @@ export default function TicketDetailPage() {
     }
   }
 
-  const sentiment = ticket ? getSentimentLabel(ticket.sentiment_score) : null
+  const sentiment = ticket?.call?.sentiment
+    ? getSentimentLabel(ticket.call.sentiment === 'positive' ? 0.5 : ticket.call.sentiment === 'negative' ? -0.5 : 0)
+    : null
 
   return (
     <AuthenticatedLayout>
@@ -238,11 +238,20 @@ export default function TicketDetailPage() {
 
                 <h1 className="text-2xl font-bold text-text-primary mb-2">{ticket.title}</h1>
 
-                <div className="flex flex-wrap gap-4 text-sm text-text-muted">
-                  <span>Created: {new Date(ticket.created_at).toLocaleString()}</span>
-                  {ticket.resolved_at && (
-                    <span>Resolved: {new Date(ticket.resolved_at).toLocaleString()}</span>
-                  )}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap gap-4 text-sm text-text-muted">
+                    <span>Created: {new Date(ticket.created_at).toLocaleString()}</span>
+                    {ticket.resolved_at && (
+                      <span>Resolved: {new Date(ticket.resolved_at).toLocaleString()}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => router.push(`/chat?attach=${ticket.id}`)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-primary text-white hover:bg-accent-primary/90 transition-colors text-sm font-medium"
+                  >
+                    <MessagesSquare className="w-4 h-4" />
+                    Chat about this ticket
+                  </button>
                 </div>
               </div>
 
@@ -326,30 +335,22 @@ export default function TicketDetailPage() {
                     <h2 className="text-lg font-semibold text-text-primary">Metrics</h2>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Sentiment</span>
-                      <span className={sentiment?.color}>{sentiment?.label}</span>
-                    </div>
-                    {ticket.sentiment_score !== null && (
+                    {sentiment && (
                       <div className="flex justify-between">
-                        <span className="text-text-muted">Score</span>
-                        <span className="text-text-secondary">
-                          {(ticket.sentiment_score * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                    )}
-                    {ticket.customer_satisfaction_predicted !== null && (
-                      <div className="flex justify-between">
-                        <span className="text-text-muted">Predicted CSAT</span>
-                        <span className="text-text-secondary">
-                          {ticket.customer_satisfaction_predicted}/5
-                        </span>
+                        <span className="text-text-muted">Sentiment</span>
+                        <span className={sentiment.color}>{sentiment.label}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-text-muted">Resolution</span>
+                      <span className="text-text-muted">Status</span>
                       <span className="text-text-secondary capitalize">
-                        {ticket.resolution_status?.replace(/_/g, ' ') || 'Unknown'}
+                        {ticket.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-muted">Priority</span>
+                      <span className="text-text-secondary capitalize">
+                        {ticket.priority}
                       </span>
                     </div>
                   </div>
@@ -377,28 +378,9 @@ export default function TicketDetailPage() {
                 </div>
               )}
 
-              {/* Key Topics */}
-              {ticket.key_topics && ticket.key_topics.length > 0 && (
-                <div className="bg-bg-secondary rounded-xl border border-border-primary p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Tag className="w-5 h-5 text-accent-primary" />
-                    <h2 className="text-lg font-semibold text-text-primary">Key Topics</h2>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {ticket.key_topics.map((topic, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 rounded-full bg-bg-tertiary text-text-secondary text-sm"
-                      >
-                        {topic}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Associated Call */}
-              {ticket.supportiq_voice_calls && (
+              {ticket.call && (
                 <div className="bg-bg-secondary rounded-xl border border-border-primary p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Phone className="w-5 h-5 text-accent-primary" />
@@ -407,17 +389,17 @@ export default function TicketDetailPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="text-text-secondary">
-                        {new Date(ticket.supportiq_voice_calls.started_at).toLocaleString()}
+                        {new Date(ticket.call.started_at).toLocaleString()}
                       </p>
                       <p className="text-sm text-text-muted">
-                        Duration: {ticket.supportiq_voice_calls.duration_seconds
-                          ? `${Math.floor(ticket.supportiq_voice_calls.duration_seconds / 60)}:${(ticket.supportiq_voice_calls.duration_seconds % 60).toString().padStart(2, '0')}`
+                        Duration: {ticket.call.duration_seconds
+                          ? `${Math.floor(ticket.call.duration_seconds / 60)}:${(ticket.call.duration_seconds % 60).toString().padStart(2, '0')}`
                           : 'N/A'
                         }
                       </p>
                     </div>
                     <Link
-                      href={`/dashboard/calls/${ticket.supportiq_voice_calls.id}`}
+                      href={`/dashboard/calls/${ticket.call.id}`}
                       className="px-4 py-2 rounded-lg bg-accent-primary text-white hover:bg-accent-primary/90 transition-colors"
                     >
                       View Call Details

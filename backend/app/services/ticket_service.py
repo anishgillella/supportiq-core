@@ -1,10 +1,12 @@
 """
 Ticket Service - CRUD operations for support tickets
 
-Tickets are automatically created after each call based on the call analysis.
+Tickets are automatically created after each call based on the call analysis,
+or manually created via chat.
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+import json
 from app.core.database import get_supabase_admin
 
 
@@ -272,3 +274,179 @@ async def get_ticket_stats(user_id: Optional[str] = None) -> Dict[str, Any]:
             "by_priority": {"critical": 0, "high": 0, "medium": 0, "low": 0},
             "by_category": {},
         }
+
+
+# ============================================
+# CHAT-BASED TICKET OPERATIONS
+# ============================================
+
+async def create_ticket_from_chat(
+    user_id: str,
+    title: str,
+    description: str,
+    priority: str = "medium",
+    category: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Create a ticket from chat.
+
+    Returns the created ticket with ticket_number.
+    """
+    try:
+        supabase = get_supabase_admin()
+
+        record = {
+            "user_id": user_id,
+            "title": title[:200],  # Limit title length
+            "description": description,
+            "category": category or "general_inquiry",
+            "priority": priority if priority in ["low", "medium", "high", "critical"] else "medium",
+            "status": "open",
+            "source": "chat",
+        }
+
+        result = supabase.table("supportiq_tickets").insert(record).execute()
+
+        if result.data:
+            ticket = result.data[0]
+            print(f"[TICKET] Created chat ticket #{ticket.get('ticket_number')} for user {user_id}: {title}")
+            return ticket
+
+        return None
+
+    except Exception as e:
+        print(f"Error creating chat ticket: {e}")
+        return None
+
+
+async def get_ticket_by_number(ticket_number: int) -> Optional[Dict[str, Any]]:
+    """
+    Get a ticket by its sequential ticket number.
+    """
+    try:
+        supabase = get_supabase_admin()
+
+        result = supabase.table("supportiq_tickets").select(
+            "*, supportiq_voice_calls(id, vapi_call_id, started_at, duration_seconds, status)"
+        ).eq("ticket_number", ticket_number).execute()
+
+        return result.data[0] if result.data else None
+
+    except Exception as e:
+        print(f"Error getting ticket by number: {e}")
+        return None
+
+
+async def add_note_to_ticket(
+    ticket_id: str,
+    note_content: str,
+    added_by: str = "chat",
+) -> Optional[Dict[str, Any]]:
+    """
+    Add a note to an existing ticket.
+    """
+    try:
+        supabase = get_supabase_admin()
+
+        # Get current ticket
+        ticket_result = supabase.table("supportiq_tickets").select("notes").eq("id", ticket_id).execute()
+
+        if not ticket_result.data:
+            return None
+
+        current_notes = ticket_result.data[0].get("notes") or []
+
+        # Add new note
+        new_note = {
+            "content": note_content,
+            "added_by": added_by,
+            "added_at": datetime.utcnow().isoformat(),
+        }
+        current_notes.append(new_note)
+
+        # Update ticket
+        result = supabase.table("supportiq_tickets").update({
+            "notes": current_notes,
+            "updated_at": datetime.utcnow().isoformat(),
+        }).eq("id", ticket_id).execute()
+
+        return result.data[0] if result.data else None
+
+    except Exception as e:
+        print(f"Error adding note to ticket: {e}")
+        return None
+
+
+async def search_tickets(
+    query: str,
+    user_id: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 10,
+) -> List[Dict[str, Any]]:
+    """
+    Search tickets by title/description.
+
+    If user_id is provided, user's tickets are returned first,
+    followed by other matching tickets.
+    """
+    try:
+        supabase = get_supabase_admin()
+        limit = min(limit, 20)  # Cap at 20
+
+        # Build the query - search in title and description
+        # Note: Using ilike for simple text search. For production,
+        # consider using Postgres full-text search.
+        search_pattern = f"%{query}%"
+
+        base_query = supabase.table("supportiq_tickets").select(
+            "id, ticket_number, title, description, status, priority, category, created_at, updated_at, user_id, source"
+        )
+
+        # Apply status filter
+        if status and status != "all":
+            base_query = base_query.eq("status", status)
+
+        # Search in title or description
+        base_query = base_query.or_(f"title.ilike.{search_pattern},description.ilike.{search_pattern}")
+
+        # Order by created_at desc
+        base_query = base_query.order("created_at", desc=True).limit(limit * 2)  # Get extra for reordering
+
+        result = base_query.execute()
+        tickets = result.data or []
+
+        # If user_id provided, reorder to put user's tickets first
+        if user_id and tickets:
+            user_tickets = [t for t in tickets if t.get("user_id") == user_id]
+            other_tickets = [t for t in tickets if t.get("user_id") != user_id]
+            tickets = (user_tickets + other_tickets)[:limit]
+        else:
+            tickets = tickets[:limit]
+
+        return tickets
+
+    except Exception as e:
+        print(f"Error searching tickets: {e}")
+        return []
+
+
+async def get_tickets_by_ids(ticket_ids: List[str]) -> List[Dict[str, Any]]:
+    """
+    Get multiple tickets by their IDs.
+    Used for loading attached tickets in chat.
+    """
+    try:
+        if not ticket_ids:
+            return []
+
+        supabase = get_supabase_admin()
+
+        result = supabase.table("supportiq_tickets").select(
+            "id, ticket_number, title, description, status, priority, category, created_at, updated_at"
+        ).in_("id", ticket_ids).execute()
+
+        return result.data or []
+
+    except Exception as e:
+        print(f"Error getting tickets by IDs: {e}")
+        return []

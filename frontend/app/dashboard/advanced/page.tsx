@@ -77,6 +77,8 @@ interface ConversationQualityData {
   average_response_time_seconds: number
   average_agent_talk_percentage: number
   average_hold_time_seconds: number
+  calls_with_high_clarity: number
+  calls_with_low_clarity: number
 }
 
 function formatHour(hour: number): string {
