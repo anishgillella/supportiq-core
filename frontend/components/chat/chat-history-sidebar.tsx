@@ -86,14 +86,22 @@ function ConversationItem({
   const [showDelete, setShowDelete] = useState(false)
 
   return (
-    <motion.button
+    <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       onClick={onSelect}
       onMouseEnter={() => setShowDelete(true)}
       onMouseLeave={() => setShowDelete(false)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect()
+        }
+      }}
       className={cn(
-        'w-full text-left px-3 py-2.5 rounded-lg transition-colors group relative',
+        'w-full text-left px-3 py-2.5 rounded-lg transition-colors group relative cursor-pointer',
         isActive
           ? 'bg-accent-primary/20 text-text-primary'
           : 'hover:bg-bg-tertiary text-text-secondary'
@@ -141,7 +149,7 @@ function ConversationItem({
           </motion.button>
         )}
       </AnimatePresence>
-    </motion.button>
+    </motion.div>
   )
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, Ticket, Loader2, CheckCircle, Circle, Clock } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -52,44 +52,55 @@ export function TicketPicker({
   const [tickets, setTickets] = useState<TicketResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const loadingRef = useRef(false)
 
-  const searchTickets = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setTickets([])
-      return
-    }
+  // Memoize excludeIds to avoid unnecessary re-renders
+  const excludeIdsKey = useMemo(() => excludeIds.join(','), [excludeIds])
 
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const result = await api.searchTicketsForChat(
-        token,
-        searchQuery,
-        statusFilter !== 'all' ? statusFilter : undefined,
-        15
-      )
-      // Filter out already attached tickets
-      const filtered = result.tickets.filter(t => !excludeIds.includes(t.id))
-      setTickets(filtered)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed')
-      setTickets([])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [token, statusFilter, excludeIds])
-
-  // Debounced search
+  // Load tickets effect - handles both initial load and search
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (query.trim()) {
-        searchTickets(query)
-      }
-    }, 300)
+    if (!isOpen || !token) return
 
+    // Prevent concurrent loads
+    if (loadingRef.current) return
+
+    const loadTickets = async () => {
+      loadingRef.current = true
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        let result
+        if (query.trim()) {
+          result = await api.searchTicketsForChat(
+            token,
+            query,
+            statusFilter !== 'all' ? statusFilter : undefined,
+            15
+          )
+        } else {
+          result = await api.getRecentTickets(
+            token,
+            statusFilter !== 'all' ? statusFilter : undefined,
+            15
+          )
+        }
+        // Filter out already attached tickets
+        const filtered = result.tickets.filter(t => !excludeIds.includes(t.id))
+        setTickets(filtered)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load tickets')
+        setTickets([])
+      } finally {
+        setIsLoading(false)
+        loadingRef.current = false
+      }
+    }
+
+    // Debounce the search
+    const timer = setTimeout(loadTickets, 300)
     return () => clearTimeout(timer)
-  }, [query, searchTickets])
+  }, [isOpen, query, statusFilter, token, excludeIdsKey])
 
   // Clear state when closing
   useEffect(() => {
@@ -182,19 +193,15 @@ export function TicketPicker({
                 </div>
               )}
 
-              {!isLoading && !error && query && tickets.length === 0 && (
+              {!isLoading && !error && tickets.length === 0 && (
                 <div className="text-center py-8">
                   <Ticket className="w-10 h-10 text-text-muted mx-auto mb-3" />
-                  <p className="text-text-muted text-sm">No tickets found</p>
-                  <p className="text-text-muted text-xs mt-1">Try a different search term</p>
-                </div>
-              )}
-
-              {!query && !isLoading && (
-                <div className="text-center py-8">
-                  <Search className="w-10 h-10 text-text-muted mx-auto mb-3" />
-                  <p className="text-text-muted text-sm">Search for tickets to attach</p>
-                  <p className="text-text-muted text-xs mt-1">Attached tickets provide context to the AI</p>
+                  <p className="text-text-muted text-sm">
+                    {query ? 'No tickets found' : 'No tickets yet'}
+                  </p>
+                  <p className="text-text-muted text-xs mt-1">
+                    {query ? 'Try a different search term' : 'Create tickets from calls or chat'}
+                  </p>
                 </div>
               )}
 

@@ -23,6 +23,7 @@ import { TicketPicker } from '@/components/chat/ticket-picker'
 import { TicketChip } from '@/components/chat/ticket-chip'
 import { TicketCardInline } from '@/components/chat/ticket-card-inline'
 import { ChatHistorySidebar } from '@/components/chat/chat-history-sidebar'
+import { TicketMention, TicketMentionRef } from '@/components/chat/ticket-mention'
 
 interface AttachedTicket {
   id: string
@@ -75,8 +76,18 @@ function ChatPageContent() {
   const [isLoadingConversations, setIsLoadingConversations] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
+  // @ mention state
+  const [mentionOpen, setMentionOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const [mentionTicketCount, setMentionTicketCount] = useState(0)
+  const [mentionStartPos, setMentionStartPos] = useState(-1)
+  const [mentionTickets, setMentionTickets] = useState<AttachedTicket[]>([])
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const inputContainerRef = useRef<HTMLDivElement>(null)
+  const mentionRef = useRef<TicketMentionRef>(null)
 
   // Load conversations on mount
   useEffect(() => {
@@ -167,6 +178,109 @@ function ChatPageContent() {
     setAttachedTickets((prev) => prev.filter((t) => t.id !== ticketId))
   }
 
+  // @ mention handlers
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const cursorPos = e.target.selectionStart || 0
+    setInput(value)
+
+    // Find @ symbol before cursor
+    const textBeforeCursor = value.slice(0, cursorPos)
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@')
+
+    if (lastAtIndex !== -1) {
+      // Check if @ is at start or preceded by whitespace
+      const charBefore = lastAtIndex > 0 ? value[lastAtIndex - 1] : ' '
+      if (charBefore === ' ' || lastAtIndex === 0) {
+        const query = textBeforeCursor.slice(lastAtIndex + 1)
+        // Only open if query doesn't contain spaces (still typing the mention)
+        if (!query.includes(' ')) {
+          setMentionOpen(true)
+          setMentionQuery(query)
+          setMentionStartPos(lastAtIndex)
+          setMentionIndex(0)
+          return
+        }
+      }
+    }
+
+    // Close mention if conditions not met
+    if (mentionOpen) {
+      setMentionOpen(false)
+      setMentionQuery('')
+      setMentionStartPos(-1)
+    }
+  }
+
+  const handleMentionSelect = (ticket: {
+    id: string
+    ticket_number: number
+    title: string
+    status: string
+    priority: string
+  }) => {
+    // Replace the @query with #ticketNumber
+    if (mentionStartPos >= 0) {
+      const before = input.slice(0, mentionStartPos)
+      const after = input.slice(mentionStartPos + mentionQuery.length + 1)
+      const newInput = `${before}#${ticket.ticket_number} ${after}`
+      setInput(newInput)
+    }
+
+    // Attach the ticket if not already attached
+    if (!attachedTickets.find((t) => t.id === ticket.id)) {
+      setAttachedTickets((prev) => [...prev, ticket])
+    }
+
+    // Close mention
+    setMentionOpen(false)
+    setMentionQuery('')
+    setMentionStartPos(-1)
+    setMentionIndex(0)
+
+    // Refocus input
+    inputRef.current?.focus()
+  }
+
+  const closeMention = () => {
+    setMentionOpen(false)
+    setMentionQuery('')
+    setMentionStartPos(-1)
+    setMentionIndex(0)
+  }
+
+  // Handle keyboard navigation for @ mention
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!mentionOpen) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      e.stopPropagation()
+      setMentionIndex((prev) => Math.min(prev + 1, mentionTicketCount - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      e.stopPropagation()
+      setMentionIndex((prev) => Math.max(prev - 1, 0))
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      closeMention()
+    } else if (e.key === 'Tab' || e.key === 'Enter') {
+      // Prevent form submission when selecting a ticket
+      e.preventDefault()
+      e.stopPropagation()
+      if (mentionTicketCount > 0 && mentionTickets[mentionIndex]) {
+        handleMentionSelect(mentionTickets[mentionIndex])
+      }
+    }
+  }
+
+  // Handle tickets loaded from mention dropdown
+  const handleMentionTicketsLoaded = (count: number, tickets: AttachedTicket[]) => {
+    setMentionTicketCount(count)
+    setMentionTickets(tickets)
+  }
+
   const handleNewChat = () => {
     setMessages([])
     setConversationId(null)
@@ -235,6 +349,8 @@ function ChatPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Don't submit if mention dropdown is open (user is selecting a ticket)
+    if (mentionOpen) return
     if (!input.trim() || isLoading || !token) return
 
     const userMessage = input.trim()
@@ -578,24 +694,44 @@ function ChatPageContent() {
           {/* Input Area */}
           <div className="border-t border-border-primary bg-bg-secondary/50 backdrop-blur-sm flex-shrink-0">
             <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-4 py-3">
-              <div className="flex gap-2">
+              <div ref={inputContainerRef} className="flex gap-2 relative">
                 <input
                   ref={inputRef}
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask a question or create a ticket..."
+                  onChange={handleInputChange}
+                  onKeyDown={handleInputKeyDown}
+                  placeholder="Ask a question or type @ to attach a ticket..."
                   className="flex-1 px-4 py-2.5 rounded-xl bg-bg-tertiary border border-border-primary text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 focus:border-accent-primary transition-all text-sm"
                   disabled={isLoading}
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim() || isLoading}
+                  disabled={!input.trim() || isLoading || mentionOpen}
                   className="px-4 py-2.5 rounded-xl bg-accent-primary text-white font-medium hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                 >
                   <Send className="w-4 h-4" />
                 </button>
+
+                {/* @ Mention Dropdown */}
+                {token && (
+                  <TicketMention
+                    ref={mentionRef}
+                    isOpen={mentionOpen}
+                    query={mentionQuery}
+                    token={token}
+                    excludeIds={attachedTickets.map((t) => t.id)}
+                    onSelect={handleMentionSelect}
+                    onClose={closeMention}
+                    position={{ top: 50, left: 0 }}
+                    selectedIndex={mentionIndex}
+                    onTicketsLoaded={handleMentionTicketsLoaded}
+                  />
+                )}
               </div>
+              <p className="text-[10px] text-text-muted mt-1.5 ml-1">
+                Type <kbd className="px-1 py-0.5 rounded bg-bg-tertiary text-text-secondary">@</kbd> to attach a ticket
+              </p>
             </form>
           </div>
         </div>

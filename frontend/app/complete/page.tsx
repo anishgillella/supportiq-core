@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { CheckCircle2, ArrowRight, Sparkles, Database, MessageSquare } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Sparkles, Database } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Confetti } from '@/components/onboarding/confetti'
@@ -109,19 +109,13 @@ export default function CompletePage() {
                 <div className="w-5 h-5 rounded-full bg-accent-muted flex items-center justify-center">
                   <span className="text-xs text-accent-primary font-medium">1</span>
                 </div>
-                Add your website or documents to the Knowledge Base
+                View your user data and account details
               </li>
               <li className="flex items-center gap-2 text-sm text-text-primary">
                 <div className="w-5 h-5 rounded-full bg-accent-muted flex items-center justify-center">
                   <span className="text-xs text-accent-primary font-medium">2</span>
                 </div>
-                Chat with your AI assistant to test responses
-              </li>
-              <li className="flex items-center gap-2 text-sm text-text-primary">
-                <div className="w-5 h-5 rounded-full bg-accent-muted flex items-center justify-center">
-                  <span className="text-xs text-accent-primary font-medium">3</span>
-                </div>
-                Deploy to automate customer interactions
+                Add your website or documents to the Knowledge Base
               </li>
             </ul>
           </motion.div>
@@ -136,29 +130,20 @@ export default function CompletePage() {
             <Button
               size="lg"
               className="w-full group"
-              onClick={() => router.push('/knowledge')}
+              onClick={handleViewData}
             >
-              <Database className="mr-2 w-4 h-4" />
-              Add to Knowledge Base
+              View User Data
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button
               size="lg"
               variant="secondary"
               className="w-full group"
-              onClick={() => router.push('/chat')}
+              onClick={() => router.push('/knowledge')}
             >
-              <MessageSquare className="mr-2 w-4 h-4" />
-              Open AI Chat
+              <Database className="mr-2 w-4 h-4" />
+              Add to Knowledge Base
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="lg"
-              className="w-full"
-              onClick={handleViewData}
-            >
-              View User Data
             </Button>
           </motion.div>
         </CardContent>
