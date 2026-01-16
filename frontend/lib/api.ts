@@ -187,6 +187,31 @@ class ApiClient {
     )
   }
 
+  // Get recent tickets for chat picker (no search query required)
+  async getRecentTickets(token: string, status?: string, limit?: number) {
+    const params = new URLSearchParams()
+    if (status) params.set('status', status)
+    if (limit) params.set('limit', limit.toString())
+
+    const queryString = params.toString()
+    return this.request<{
+      tickets: Array<{
+        id: string
+        ticket_number: number
+        title: string
+        description: string | null
+        status: string
+        priority: string
+        category: string | null
+        created_at: string
+        updated_at: string
+        user_id: string | null
+        source: string
+      }>
+      count: number
+    }>(`/chat/tickets/recent${queryString ? `?${queryString}` : ''}`, { token })
+  }
+
   // Ticket search for chat picker
   async searchTicketsForChat(token: string, query: string, status?: string, limit?: number) {
     const params = new URLSearchParams({ q: query })

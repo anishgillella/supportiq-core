@@ -5,7 +5,7 @@ Tickets are automatically created after each call based on the call analysis,
 or manually created via chat.
 """
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from app.core.database import get_supabase_admin
 
@@ -235,8 +235,9 @@ async def get_ticket_stats(user_id: Optional[str] = None) -> Dict[str, Any]:
         # Calculate stats
         total = len(tickets)
         open_count = sum(1 for t in tickets if t["status"] == "open")
-        in_progress = sum(1 for t in tickets if t["status"] == "in_progress")
-        resolved = sum(1 for t in tickets if t["status"] in ["resolved", "closed"])
+        in_progress_count = sum(1 for t in tickets if t["status"] == "in_progress")
+        resolved_count = sum(1 for t in tickets if t["status"] == "resolved")
+        closed_count = sum(1 for t in tickets if t["status"] == "closed")
 
         # Priority breakdown
         critical = sum(1 for t in tickets if t["priority"] == "critical")
@@ -250,12 +251,37 @@ async def get_ticket_stats(user_id: Optional[str] = None) -> Dict[str, Any]:
             cat = t.get("category", "other")
             categories[cat] = categories.get(cat, 0) + 1
 
+        # Calculate additional stats
+        now = datetime.utcnow()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=today_start.weekday())
+
+        tickets_today = sum(1 for t in tickets if datetime.fromisoformat(t["created_at"].replace("Z", "+00:00")).replace(tzinfo=None) >= today_start)
+        tickets_this_week = sum(1 for t in tickets if datetime.fromisoformat(t["created_at"].replace("Z", "+00:00")).replace(tzinfo=None) >= week_start)
+
+        # Calculate average resolution time
+        resolved_tickets = [t for t in tickets if t.get("resolved_at") and t.get("created_at")]
+        avg_resolution_time_hours = None
+        if resolved_tickets:
+            total_hours = 0
+            for t in resolved_tickets:
+                created = datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))
+                resolved = datetime.fromisoformat(t["resolved_at"].replace("Z", "+00:00"))
+                total_hours += (resolved - created).total_seconds() / 3600
+            avg_resolution_time_hours = round(total_hours / len(resolved_tickets), 1)
+
         return {
             "total": total,
+            # Top-level status counts for frontend compatibility
+            "open": open_count,
+            "in_progress": in_progress_count,
+            "resolved": resolved_count,
+            "closed": closed_count,
+            # Keep by_status for backwards compatibility
             "by_status": {
                 "open": open_count,
-                "in_progress": in_progress,
-                "resolved": resolved,
+                "in_progress": in_progress_count,
+                "resolved": resolved_count,
             },
             "by_priority": {
                 "critical": critical,
@@ -264,15 +290,25 @@ async def get_ticket_stats(user_id: Optional[str] = None) -> Dict[str, Any]:
                 "low": low,
             },
             "by_category": categories,
+            "avg_resolution_time_hours": avg_resolution_time_hours,
+            "tickets_today": tickets_today,
+            "tickets_this_week": tickets_this_week,
         }
 
     except Exception as e:
         print(f"Error getting ticket stats: {e}")
         return {
             "total": 0,
+            "open": 0,
+            "in_progress": 0,
+            "resolved": 0,
+            "closed": 0,
             "by_status": {"open": 0, "in_progress": 0, "resolved": 0},
             "by_priority": {"critical": 0, "high": 0, "medium": 0, "low": 0},
             "by_category": {},
+            "avg_resolution_time_hours": None,
+            "tickets_today": 0,
+            "tickets_this_week": 0,
         }
 
 

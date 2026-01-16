@@ -605,6 +605,46 @@ Title:"""
 # TICKET SEARCH (for picker)
 # ============================================
 
+@router.get("/tickets/recent")
+async def get_recent_tickets_endpoint(
+    status: Optional[str] = Query(None, description="Filter by status"),
+    limit: int = Query(10, ge=1, le=20, description="Max results"),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """Get recent tickets for the ticket picker (no search query required)"""
+    from app.core.database import get_supabase_admin
+
+    try:
+        supabase = get_supabase_admin()
+
+        query = supabase.table("supportiq_tickets").select(
+            "id, ticket_number, title, description, status, priority, category, created_at, updated_at, user_id, source"
+        )
+
+        # Apply status filter
+        if status and status != "all":
+            query = query.eq("status", status)
+
+        # Order by updated_at desc to show most recently active tickets
+        query = query.order("updated_at", desc=True).limit(limit)
+
+        result = query.execute()
+        tickets = result.data or []
+
+        # Reorder to put current user's tickets first
+        user_tickets = [t for t in tickets if t.get("user_id") == current_user.user_id]
+        other_tickets = [t for t in tickets if t.get("user_id") != current_user.user_id]
+        tickets = (user_tickets + other_tickets)[:limit]
+
+        return {
+            "tickets": tickets,
+            "count": len(tickets),
+        }
+    except Exception as e:
+        print(f"Error getting recent tickets: {e}")
+        return {"tickets": [], "count": 0}
+
+
 @router.get("/tickets/search")
 async def search_tickets_endpoint(
     q: str = Query(..., min_length=1, description="Search query"),
