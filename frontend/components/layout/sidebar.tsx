@@ -89,7 +89,21 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          // Check if this item should be active
+          // Exact match always wins, but for parent routes, only highlight if no child route matches
+          const isActive = (() => {
+            if (pathname === item.href) return true;
+            if (pathname.startsWith(item.href + '/')) {
+              // Check if a more specific nav item matches
+              const hasMoreSpecificMatch = navItems.some(
+                other => other.href !== item.href &&
+                         other.href.startsWith(item.href) &&
+                         (pathname === other.href || pathname.startsWith(other.href + '/'))
+              );
+              return !hasMoreSpecificMatch;
+            }
+            return false;
+          })();
           const Icon = item.icon
 
           return (
