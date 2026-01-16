@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     analysis_model: str = "google/gemini-2.5-flash"
 
     class Config:
-        env_file = "/Users/anishgillella/conductor/workspaces/supportiq-core/.env"
+        env_file = ".env"
         case_sensitive = False
         extra = "ignore"
 
