@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from typing import List
 from app.models.user import UserWithProfileResponse, ProfileResponse
 from app.core.database import get_supabase_admin
@@ -58,3 +58,49 @@ async def get_all_supportiq_users():
         )
 
     return result
+
+
+@router.delete("/{user_id}")
+async def delete_user(user_id: str):
+    """Delete a user by ID (admin endpoint)"""
+    supabase = get_supabase_admin()
+
+    # First check if user exists
+    user_result = (
+        supabase.table("supportiq_users")
+        .select("id, email")
+        .eq("id", user_id)
+        .execute()
+    )
+
+    if not user_result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete user (profile will be cascade deleted due to ON DELETE CASCADE)
+    supabase.table("supportiq_users").delete().eq("id", user_id).execute()
+
+    return {"message": f"User {user_result.data[0]['email']} deleted successfully"}
+
+
+@router.delete("/by-email/{email}")
+async def delete_user_by_email(email: str):
+    """Delete a user by email (admin endpoint)"""
+    supabase = get_supabase_admin()
+
+    # First find the user
+    user_result = (
+        supabase.table("supportiq_users")
+        .select("id, email")
+        .eq("email", email)
+        .execute()
+    )
+
+    if not user_result.data:
+        raise HTTPException(status_code=404, detail=f"User with email {email} not found")
+
+    user_id = user_result.data[0]["id"]
+
+    # Delete user (profile will be cascade deleted due to ON DELETE CASCADE)
+    supabase.table("supportiq_users").delete().eq("id", user_id).execute()
+
+    return {"message": f"User {email} deleted successfully"}

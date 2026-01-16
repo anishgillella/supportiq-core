@@ -202,12 +202,9 @@ export default function DataPage() {
                         {user.email}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-4 max-w-[300px]">
                       {user.profile?.about_me ? (
-                        <span
-                          className="text-text-secondary text-sm max-w-[200px] truncate block"
-                          title={user.profile.about_me}
-                        >
+                        <span className="text-text-secondary text-sm whitespace-pre-wrap break-words">
                           {user.profile.about_me}
                         </span>
                       ) : (
