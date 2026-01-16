@@ -849,6 +849,580 @@ async def get_knowledge_gaps(
         return []
 
 
+# ========================================
+# NEW GRANULAR ANALYTICS ENDPOINTS
+# ========================================
+
+@router.get("/time-based")
+async def get_time_based_analytics(
+    days: int = Query(30, ge=1, le=90),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Get time-based analytics including hourly distribution and peak hours.
+    """
+    try:
+        supabase = get_supabase()
+        start_date = datetime.utcnow() - timedelta(days=days)
+
+        # Get calls with analytics
+        result = supabase.table("supportiq_voice_calls").select(
+            "id, started_at, duration_seconds, supportiq_call_analytics(call_hour, call_day_of_week, is_peak_hour, sentiment_score, resolution_status)"
+        ).eq("caller_id", current_user.user_id).gte(
+            "started_at", start_date.isoformat()
+        ).execute()
+
+        calls = result.data or []
+
+        # Hourly distribution
+        hourly_distribution = {i: {"calls": 0, "avg_sentiment": 0.0, "sentiments": []} for i in range(24)}
+
+        # Day of week distribution
+        day_distribution = {
+            "Monday": {"calls": 0, "avg_duration": 0.0, "durations": []},
+            "Tuesday": {"calls": 0, "avg_duration": 0.0, "durations": []},
+            "Wednesday": {"calls": 0, "avg_duration": 0.0, "durations": []},
+            "Thursday": {"calls": 0, "avg_duration": 0.0, "durations": []},
+            "Friday": {"calls": 0, "avg_duration": 0.0, "durations": []},
+            "Saturday": {"calls": 0, "avg_duration": 0.0, "durations": []},
+            "Sunday": {"calls": 0, "avg_duration": 0.0, "durations": []},
+        }
+
+        for call in calls:
+            # Parse start time
+            started_at = call.get("started_at")
+            if isinstance(started_at, str):
+                try:
+                    dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                    hour = dt.hour
+                    day_name = dt.strftime("%A")
+
+                    # Update hourly
+                    hourly_distribution[hour]["calls"] += 1
+
+                    # Get sentiment from analytics
+                    analytics = call.get("supportiq_call_analytics")
+                    if analytics:
+                        if isinstance(analytics, list) and analytics:
+                            analytics = analytics[0]
+                        if isinstance(analytics, dict):
+                            sentiment = analytics.get("sentiment_score")
+                            if sentiment is not None:
+                                hourly_distribution[hour]["sentiments"].append(sentiment)
+
+                    # Update day of week
+                    if day_name in day_distribution:
+                        day_distribution[day_name]["calls"] += 1
+                        duration = call.get("duration_seconds", 0) or 0
+                        if duration > 0:
+                            day_distribution[day_name]["durations"].append(duration)
+                except Exception:
+                    pass
+
+        # Calculate averages
+        for hour_data in hourly_distribution.values():
+            if hour_data["sentiments"]:
+                hour_data["avg_sentiment"] = sum(hour_data["sentiments"]) / len(hour_data["sentiments"])
+            del hour_data["sentiments"]
+
+        for day_data in day_distribution.values():
+            if day_data["durations"]:
+                day_data["avg_duration"] = sum(day_data["durations"]) / len(day_data["durations"])
+            del day_data["durations"]
+
+        # Find peak hours (top 3 by call volume)
+        peak_hours = sorted(
+            [(hour, data["calls"]) for hour, data in hourly_distribution.items()],
+            key=lambda x: x[1],
+            reverse=True
+        )[:3]
+
+        return {
+            "hourly_distribution": hourly_distribution,
+            "day_of_week_distribution": day_distribution,
+            "peak_hours": [{"hour": h, "calls": c} for h, c in peak_hours],
+            "total_calls": len(calls),
+            "days_analyzed": days
+        }
+
+    except Exception as e:
+        print(f"Error getting time-based analytics: {e}")
+        return {
+            "hourly_distribution": {},
+            "day_of_week_distribution": {},
+            "peak_hours": [],
+            "total_calls": 0,
+            "days_analyzed": days
+        }
+
+
+@router.get("/effort-scores")
+async def get_effort_score_analytics(
+    days: int = Query(30, ge=1, le=90),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Get Customer Effort Score (CES) distribution and trends.
+    """
+    try:
+        supabase = get_supabase()
+        start_date = datetime.utcnow() - timedelta(days=days)
+
+        # Get calls with CES data
+        result = supabase.table("supportiq_voice_calls").select(
+            "id, started_at, supportiq_call_analytics(customer_effort_score, customer_had_to_repeat, transfer_count, resolution_status)"
+        ).eq("caller_id", current_user.user_id).gte(
+            "started_at", start_date.isoformat()
+        ).execute()
+
+        calls = result.data or []
+
+        # CES distribution (1-5)
+        ces_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        all_ces_scores = []
+        repeat_count = 0
+        transfer_counts = []
+
+        # Daily CES trend
+        daily_ces = {}
+
+        for call in calls:
+            analytics = call.get("supportiq_call_analytics")
+            if analytics:
+                if isinstance(analytics, list) and analytics:
+                    analytics = analytics[0]
+                if isinstance(analytics, dict):
+                    ces = analytics.get("customer_effort_score", 3)
+                    ces = max(1, min(5, ces))  # Clamp to 1-5
+                    ces_distribution[ces] += 1
+                    all_ces_scores.append(ces)
+
+                    if analytics.get("customer_had_to_repeat"):
+                        repeat_count += 1
+
+                    transfer = analytics.get("transfer_count", 0)
+                    if transfer:
+                        transfer_counts.append(transfer)
+
+                    # Daily trend
+                    started_at = call.get("started_at")
+                    if isinstance(started_at, str):
+                        try:
+                            date_str = started_at[:10]
+                            if date_str not in daily_ces:
+                                daily_ces[date_str] = []
+                            daily_ces[date_str].append(ces)
+                        except Exception:
+                            pass
+
+        # Calculate metrics
+        avg_ces = sum(all_ces_scores) / len(all_ces_scores) if all_ces_scores else 3.0
+        repeat_rate = (repeat_count / len(calls) * 100) if calls else 0
+        avg_transfers = sum(transfer_counts) / len(transfer_counts) if transfer_counts else 0
+
+        # Daily trend
+        ces_trend = []
+        for date_str in sorted(daily_ces.keys()):
+            scores = daily_ces[date_str]
+            ces_trend.append({
+                "date": date_str,
+                "avg_ces": sum(scores) / len(scores),
+                "calls": len(scores)
+            })
+
+        return {
+            "ces_distribution": ces_distribution,
+            "average_ces": round(avg_ces, 2),
+            "repeat_rate_percent": round(repeat_rate, 1),
+            "average_transfers": round(avg_transfers, 2),
+            "total_calls_with_repeats": repeat_count,
+            "ces_trend": ces_trend,
+            "total_calls": len(calls),
+            "ces_breakdown": {
+                "effortless": ces_distribution[1] + ces_distribution[2],
+                "moderate": ces_distribution[3],
+                "high_effort": ces_distribution[4] + ces_distribution[5]
+            }
+        }
+
+    except Exception as e:
+        print(f"Error getting effort score analytics: {e}")
+        return {
+            "ces_distribution": {},
+            "average_ces": 3.0,
+            "repeat_rate_percent": 0,
+            "average_transfers": 0,
+            "total_calls_with_repeats": 0,
+            "ces_trend": [],
+            "total_calls": 0,
+            "ces_breakdown": {"effortless": 0, "moderate": 0, "high_effort": 0}
+        }
+
+
+@router.get("/escalation-analytics")
+async def get_escalation_analytics(
+    days: int = Query(30, ge=1, le=90),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Get escalation rates, reasons, and department breakdown.
+    """
+    try:
+        supabase = get_supabase()
+        start_date = datetime.utcnow() - timedelta(days=days)
+
+        # Get calls with escalation data
+        result = supabase.table("supportiq_voice_calls").select(
+            "id, started_at, supportiq_call_analytics(was_escalated, escalation_reason, escalation_level, escalation_resolved, escalated_to_department, primary_category)"
+        ).eq("caller_id", current_user.user_id).gte(
+            "started_at", start_date.isoformat()
+        ).execute()
+
+        calls = result.data or []
+
+        total_calls = len(calls)
+        escalated_calls = 0
+        escalation_reasons = {}
+        escalation_levels = {}
+        departments = {}
+        categories_escalated = {}
+        resolved_escalations = 0
+
+        for call in calls:
+            analytics = call.get("supportiq_call_analytics")
+            if analytics:
+                if isinstance(analytics, list) and analytics:
+                    analytics = analytics[0]
+                if isinstance(analytics, dict):
+                    if analytics.get("was_escalated"):
+                        escalated_calls += 1
+
+                        # Count resolved
+                        if analytics.get("escalation_resolved"):
+                            resolved_escalations += 1
+
+                        # Reasons
+                        reason = analytics.get("escalation_reason")
+                        if reason:
+                            escalation_reasons[reason] = escalation_reasons.get(reason, 0) + 1
+
+                        # Levels
+                        level = analytics.get("escalation_level")
+                        if level and level != "none":
+                            escalation_levels[level] = escalation_levels.get(level, 0) + 1
+
+                        # Departments
+                        dept = analytics.get("escalated_to_department")
+                        if dept:
+                            departments[dept] = departments.get(dept, 0) + 1
+
+                        # Categories that lead to escalation
+                        category = analytics.get("primary_category")
+                        if category:
+                            categories_escalated[category] = categories_escalated.get(category, 0) + 1
+
+        escalation_rate = (escalated_calls / total_calls * 100) if total_calls > 0 else 0
+        resolution_rate = (resolved_escalations / escalated_calls * 100) if escalated_calls > 0 else 0
+
+        # Sort and get top items
+        top_reasons = sorted(escalation_reasons.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_departments = sorted(departments.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_categories = sorted(categories_escalated.items(), key=lambda x: x[1], reverse=True)[:10]
+
+        return {
+            "total_calls": total_calls,
+            "escalated_calls": escalated_calls,
+            "escalation_rate_percent": round(escalation_rate, 1),
+            "escalation_resolution_rate_percent": round(resolution_rate, 1),
+            "escalation_levels": escalation_levels,
+            "top_escalation_reasons": [{"reason": r, "count": c} for r, c in top_reasons],
+            "top_departments": [{"department": d, "count": c} for d, c in top_departments],
+            "categories_leading_to_escalation": [{"category": cat, "count": c} for cat, c in top_categories]
+        }
+
+    except Exception as e:
+        print(f"Error getting escalation analytics: {e}")
+        return {
+            "total_calls": 0,
+            "escalated_calls": 0,
+            "escalation_rate_percent": 0,
+            "escalation_resolution_rate_percent": 0,
+            "escalation_levels": {},
+            "top_escalation_reasons": [],
+            "top_departments": [],
+            "categories_leading_to_escalation": []
+        }
+
+
+@router.get("/competitive-intelligence")
+async def get_competitive_intelligence(
+    days: int = Query(30, ge=1, le=90),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Get aggregated competitive intelligence from calls.
+    """
+    try:
+        supabase = get_supabase()
+        start_date = datetime.utcnow() - timedelta(days=days)
+
+        # Get calls with competitive intelligence
+        result = supabase.table("supportiq_voice_calls").select(
+            "id, started_at, supportiq_call_analytics(competitive_intelligence)"
+        ).eq("caller_id", current_user.user_id).gte(
+            "started_at", start_date.isoformat()
+        ).execute()
+
+        calls = result.data or []
+
+        competitor_mentions = {}
+        comparison_requests = {}
+        switching_intent_count = 0
+        price_sensitivity = {"none": 0, "low": 0, "medium": 0, "high": 0}
+        calls_with_competitor_mentions = 0
+
+        for call in calls:
+            analytics = call.get("supportiq_call_analytics")
+            if analytics:
+                if isinstance(analytics, list) and analytics:
+                    analytics = analytics[0]
+                if isinstance(analytics, dict):
+                    ci = analytics.get("competitive_intelligence", {})
+                    if isinstance(ci, dict):
+                        # Competitors mentioned
+                        competitors = ci.get("competitors_mentioned", [])
+                        if competitors:
+                            calls_with_competitor_mentions += 1
+                            for comp in competitors:
+                                competitor_mentions[comp] = competitor_mentions.get(comp, 0) + 1
+
+                        # Comparison requests
+                        comparisons = ci.get("competitor_comparison_requests", [])
+                        for comp in comparisons:
+                            comparison_requests[comp] = comparison_requests.get(comp, 0) + 1
+
+                        # Switching intent
+                        if ci.get("switching_intent_detected"):
+                            switching_intent_count += 1
+
+                        # Price sensitivity
+                        sensitivity = ci.get("price_sensitivity_level", "none")
+                        if sensitivity in price_sensitivity:
+                            price_sensitivity[sensitivity] += 1
+
+        total_calls = len(calls)
+        competitor_mention_rate = (calls_with_competitor_mentions / total_calls * 100) if total_calls > 0 else 0
+        switching_intent_rate = (switching_intent_count / total_calls * 100) if total_calls > 0 else 0
+
+        # Sort competitors by mention count
+        top_competitors = sorted(competitor_mentions.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_comparisons = sorted(comparison_requests.items(), key=lambda x: x[1], reverse=True)[:10]
+
+        return {
+            "total_calls": total_calls,
+            "calls_with_competitor_mentions": calls_with_competitor_mentions,
+            "competitor_mention_rate_percent": round(competitor_mention_rate, 1),
+            "switching_intent_rate_percent": round(switching_intent_rate, 1),
+            "switching_intent_count": switching_intent_count,
+            "top_competitors": [{"name": c, "mentions": m} for c, m in top_competitors],
+            "top_comparison_requests": [{"comparison": c, "count": cnt} for c, cnt in top_comparisons],
+            "price_sensitivity_distribution": price_sensitivity
+        }
+
+    except Exception as e:
+        print(f"Error getting competitive intelligence: {e}")
+        return {
+            "total_calls": 0,
+            "calls_with_competitor_mentions": 0,
+            "competitor_mention_rate_percent": 0,
+            "switching_intent_rate_percent": 0,
+            "switching_intent_count": 0,
+            "top_competitors": [],
+            "top_comparison_requests": [],
+            "price_sensitivity_distribution": {}
+        }
+
+
+@router.get("/product-analytics")
+async def get_product_analytics(
+    days: int = Query(30, ge=1, le=90),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Get product and feature analytics from calls.
+    """
+    try:
+        supabase = get_supabase()
+        start_date = datetime.utcnow() - timedelta(days=days)
+
+        # Get calls with product analytics
+        result = supabase.table("supportiq_voice_calls").select(
+            "id, started_at, supportiq_call_analytics(product_analytics)"
+        ).eq("caller_id", current_user.user_id).gte(
+            "started_at", start_date.isoformat()
+        ).execute()
+
+        calls = result.data or []
+
+        products_discussed = {}
+        features_requested = {}
+        features_problematic = {}
+        upsell_opportunities = 0
+        cross_sell_suggestions = {}
+
+        for call in calls:
+            analytics = call.get("supportiq_call_analytics")
+            if analytics:
+                if isinstance(analytics, list) and analytics:
+                    analytics = analytics[0]
+                if isinstance(analytics, dict):
+                    pa = analytics.get("product_analytics", {})
+                    if isinstance(pa, dict):
+                        # Products discussed
+                        for product in pa.get("products_discussed", []):
+                            products_discussed[product] = products_discussed.get(product, 0) + 1
+
+                        # Features requested
+                        for feature in pa.get("features_requested", []):
+                            features_requested[feature] = features_requested.get(feature, 0) + 1
+
+                        # Problematic features
+                        for feature in pa.get("features_problematic", []):
+                            features_problematic[feature] = features_problematic.get(feature, 0) + 1
+
+                        # Upsell opportunities
+                        if pa.get("upsell_opportunity_detected"):
+                            upsell_opportunities += 1
+
+                        # Cross-sell suggestions
+                        for suggestion in pa.get("cross_sell_suggestions", []):
+                            cross_sell_suggestions[suggestion] = cross_sell_suggestions.get(suggestion, 0) + 1
+
+        total_calls = len(calls)
+        upsell_rate = (upsell_opportunities / total_calls * 100) if total_calls > 0 else 0
+
+        # Sort and get top items
+        top_products = sorted(products_discussed.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_features_requested = sorted(features_requested.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_features_problematic = sorted(features_problematic.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_cross_sell = sorted(cross_sell_suggestions.items(), key=lambda x: x[1], reverse=True)[:10]
+
+        return {
+            "total_calls": total_calls,
+            "upsell_opportunities": upsell_opportunities,
+            "upsell_opportunity_rate_percent": round(upsell_rate, 1),
+            "top_products_discussed": [{"product": p, "mentions": m} for p, m in top_products],
+            "top_features_requested": [{"feature": f, "requests": r} for f, r in top_features_requested],
+            "top_problematic_features": [{"feature": f, "issues": i} for f, i in top_features_problematic],
+            "top_cross_sell_suggestions": [{"suggestion": s, "count": c} for s, c in top_cross_sell]
+        }
+
+    except Exception as e:
+        print(f"Error getting product analytics: {e}")
+        return {
+            "total_calls": 0,
+            "upsell_opportunities": 0,
+            "upsell_opportunity_rate_percent": 0,
+            "top_products_discussed": [],
+            "top_features_requested": [],
+            "top_problematic_features": [],
+            "top_cross_sell_suggestions": []
+        }
+
+
+@router.get("/conversation-quality")
+async def get_conversation_quality_analytics(
+    days: int = Query(30, ge=1, le=90),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Get conversation quality metrics across calls.
+    """
+    try:
+        supabase = get_supabase()
+        start_date = datetime.utcnow() - timedelta(days=days)
+
+        # Get calls with conversation quality data
+        result = supabase.table("supportiq_voice_calls").select(
+            "id, started_at, supportiq_call_analytics(conversation_quality, handle_time_breakdown)"
+        ).eq("caller_id", current_user.user_id).gte(
+            "started_at", start_date.isoformat()
+        ).execute()
+
+        calls = result.data or []
+
+        clarity_scores = []
+        empathy_counts = []
+        jargon_counts = []
+        response_times = []
+        agent_wpm = []
+        customer_wpm = []
+        talk_percentages = []
+        hold_times = []
+
+        for call in calls:
+            analytics = call.get("supportiq_call_analytics")
+            if analytics:
+                if isinstance(analytics, list) and analytics:
+                    analytics = analytics[0]
+                if isinstance(analytics, dict):
+                    # Conversation quality
+                    cq = analytics.get("conversation_quality", {})
+                    if isinstance(cq, dict):
+                        if cq.get("clarity_score"):
+                            clarity_scores.append(cq["clarity_score"])
+                        if cq.get("empathy_phrases_count"):
+                            empathy_counts.append(cq["empathy_phrases_count"])
+                        if cq.get("jargon_usage_count") is not None:
+                            jargon_counts.append(cq["jargon_usage_count"])
+                        if cq.get("avg_agent_response_time_seconds"):
+                            response_times.append(cq["avg_agent_response_time_seconds"])
+                        if cq.get("words_per_minute_agent"):
+                            agent_wpm.append(cq["words_per_minute_agent"])
+                        if cq.get("words_per_minute_customer"):
+                            customer_wpm.append(cq["words_per_minute_customer"])
+
+                    # Handle time breakdown
+                    ht = analytics.get("handle_time_breakdown", {})
+                    if isinstance(ht, dict):
+                        if ht.get("agent_talk_percentage"):
+                            talk_percentages.append(ht["agent_talk_percentage"])
+                        if ht.get("hold_time_seconds"):
+                            hold_times.append(ht["hold_time_seconds"])
+
+        total_calls = len(calls)
+
+        return {
+            "total_calls": total_calls,
+            "average_clarity_score": round(sum(clarity_scores) / len(clarity_scores), 1) if clarity_scores else 0,
+            "average_empathy_phrases": round(sum(empathy_counts) / len(empathy_counts), 1) if empathy_counts else 0,
+            "average_jargon_usage": round(sum(jargon_counts) / len(jargon_counts), 1) if jargon_counts else 0,
+            "average_response_time_seconds": round(sum(response_times) / len(response_times), 1) if response_times else 0,
+            "average_agent_wpm": round(sum(agent_wpm) / len(agent_wpm), 0) if agent_wpm else 0,
+            "average_customer_wpm": round(sum(customer_wpm) / len(customer_wpm), 0) if customer_wpm else 0,
+            "average_agent_talk_percentage": round(sum(talk_percentages) / len(talk_percentages), 1) if talk_percentages else 50,
+            "average_hold_time_seconds": round(sum(hold_times) / len(hold_times), 0) if hold_times else 0,
+            "calls_with_high_clarity": len([s for s in clarity_scores if s >= 80]),
+            "calls_with_low_clarity": len([s for s in clarity_scores if s < 60])
+        }
+
+    except Exception as e:
+        print(f"Error getting conversation quality analytics: {e}")
+        return {
+            "total_calls": 0,
+            "average_clarity_score": 0,
+            "average_empathy_phrases": 0,
+            "average_jargon_usage": 0,
+            "average_response_time_seconds": 0,
+            "average_agent_wpm": 0,
+            "average_customer_wpm": 0,
+            "average_agent_talk_percentage": 50,
+            "average_hold_time_seconds": 0,
+            "calls_with_high_clarity": 0,
+            "calls_with_low_clarity": 0
+        }
+
+
 @router.get("/agent-performance-summary")
 async def get_agent_performance_summary(
     days: int = Query(30, ge=1, le=90),

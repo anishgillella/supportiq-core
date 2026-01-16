@@ -116,6 +116,12 @@ def extract_user_metadata_from_body(body: dict) -> dict:
     Extract user metadata from VAPI webhook body.
     Includes user_id, user_email, user_name passed when call was initiated.
     Returns a dict with all available user info.
+
+    Checks multiple locations since VAPI structures data differently:
+    - message.call.metadata
+    - call.metadata
+    - message.call.assistantOverrides.metadata
+    - message.metadata
     """
     result = {
         "user_id": None,
@@ -123,35 +129,34 @@ def extract_user_metadata_from_body(body: dict) -> dict:
         "user_name": None
     }
 
-    # Try different paths where metadata might be
+    # Get message and call objects
     message = body.get("message", {})
     call_data = message.get("call", {})
 
-    # Primary path: call.metadata
-    metadata = call_data.get("metadata", {})
+    # List of paths to check for metadata
+    metadata_paths = [
+        ("message.call.metadata", call_data.get("metadata", {})),
+        ("call.metadata", body.get("call", {}).get("metadata", {})),
+        ("assistantOverrides.metadata", call_data.get("assistantOverrides", {}).get("metadata", {})),
+        ("message.metadata", message.get("metadata", {})),
+        ("body.metadata", body.get("metadata", {})),
+    ]
 
-    if metadata:
-        result["user_id"] = metadata.get("user_id")
-        result["user_email"] = metadata.get("user_email")
-        result["user_name"] = metadata.get("user_name")
+    # Debug: print what we're looking at
+    if call_data:
+        print(f"[VAPI DEBUG] call_data has keys: {list(call_data.keys())}")
+        if "metadata" in call_data:
+            print(f"[VAPI DEBUG] call_data.metadata = {call_data.get('metadata')}")
 
-        if result["user_id"]:
-            print(f"[VAPI] Found user metadata in call: user_id={result['user_id']}, email={result['user_email']}")
-            return result
-
-    # Fallback: check top-level call object
-    if "call" in body:
-        metadata = body["call"].get("metadata", {})
-        if metadata:
+    for path_name, metadata in metadata_paths:
+        if metadata and (metadata.get("user_id") or metadata.get("user_email")):
             result["user_id"] = metadata.get("user_id")
             result["user_email"] = metadata.get("user_email")
             result["user_name"] = metadata.get("user_name")
+            print(f"[VAPI] Found user metadata at '{path_name}': user_id={result['user_id']}, email={result['user_email']}")
+            return result
 
-            if result["user_id"]:
-                print(f"[VAPI] Found user metadata in top-level call: user_id={result['user_id']}")
-                return result
-
-    print("[VAPI] No user metadata found in call")
+    print("[VAPI] No user metadata found in call - check VAPI dashboard webhook configuration")
     return result
 
 
@@ -309,7 +314,16 @@ async def handle_end_of_call(body: dict):
 
         # Extract transcript
         transcript_text = message.get("transcript", "")
-        messages = message.get("messages", [])
+        raw_messages = message.get("messages", [])
+
+        # Filter out system prompts from transcript
+        # System messages contain internal prompts that shouldn't be shown to users
+        messages = [
+            msg for msg in raw_messages
+            if msg.get("role", "").lower() != "system"
+        ]
+
+        print(f"[TRANSCRIPT] Filtered {len(raw_messages)} -> {len(messages)} messages (removed system prompts)")
 
         # Determine call status
         status = "completed"

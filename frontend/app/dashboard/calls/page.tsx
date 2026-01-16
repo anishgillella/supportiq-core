@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft,
@@ -95,6 +96,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function CallsListPage() {
+  const router = useRouter()
   const { token } = useOnboardingStore()
   const [calls, setCalls] = useState<Call[]>([])
   const [loading, setLoading] = useState(true)
@@ -234,7 +236,7 @@ export default function CallsListPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.02 }}
                       className="hover:bg-bg-tertiary/50 transition-colors cursor-pointer"
-                      onClick={() => (window.location.href = `/dashboard/calls/${call.id}`)}
+                      onClick={() => router.push(`/dashboard/calls/${call.id}`)}
                     >
                       <td className="px-4 py-3">
                         <div className="text-sm text-text-primary">

@@ -12,6 +12,8 @@ import {
   LogOut,
   Menu,
   X,
+  Ticket,
+  Phone,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useOnboardingStore } from '@/stores/onboarding-store'
@@ -34,6 +36,18 @@ const navItems = [
     href: '/dashboard',
     icon: BarChart3,
     description: 'View call analytics',
+  },
+  {
+    label: 'Calls',
+    href: '/dashboard/calls',
+    icon: Phone,
+    description: 'View all calls',
+  },
+  {
+    label: 'Tickets',
+    href: '/tickets',
+    icon: Ticket,
+    description: 'View support tickets',
   },
   {
     label: 'User Data',

@@ -171,13 +171,21 @@ export default function KnowledgePage() {
     setIsConnecting(true)
     setCallStatus('Connecting...')
 
+    // Get user email from form data
+    const userEmail = useOnboardingStore.getState().formData.email
+    const userName = useOnboardingStore.getState().formData.aboutMe || userEmail
+
     try {
+      // Pass user metadata for proper webhook delivery
       await vapiRef.current.start(VAPI_ASSISTANT_ID, {
         metadata: {
           user_id: userId,
+          user_email: userEmail,
+          user_name: userName,
           initiated_from: 'knowledge_base'
         }
       })
+      console.log('[VAPI] Started call with user_id:', userId, 'email:', userEmail)
     } catch (err) {
       console.error('Failed to start call:', err)
       setCallStatus('Failed to connect')
