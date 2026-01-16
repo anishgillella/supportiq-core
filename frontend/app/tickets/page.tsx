@@ -23,32 +23,37 @@ import { useOnboardingStore } from '@/stores/onboarding-store'
 
 interface TicketData {
   id: string
-  call_id: string
+  call_id: string | null
+  user_id: string | null
   title: string
-  description: string
-  category: string
+  description: string | null
+  category: string | null
   priority: string
   status: string
+  customer_name: string | null
   customer_email: string | null
-  sentiment_score: number | null
-  action_items: string[]
+  customer_phone: string | null
   created_at: string
   updated_at: string
+  resolved_at: string | null
 }
 
 interface TicketStats {
   total: number
-  by_status: {
-    open: number
-    in_progress: number
-    resolved: number
-  }
+  open: number
+  in_progress: number
+  resolved: number
+  closed: number
   by_priority: {
-    critical: number
-    high: number
-    medium: number
     low: number
+    medium: number
+    high: number
+    critical: number
   }
+  by_category: Record<string, number>
+  avg_resolution_time_hours: number | null
+  tickets_today: number
+  tickets_this_week: number
 }
 
 function PriorityBadge({ priority }: { priority: string }) {
@@ -192,7 +197,7 @@ export default function TicketsPage() {
                   <Circle className="w-4 h-4" />
                   <span className="text-sm font-medium">Open</span>
                 </div>
-                <p className="text-2xl font-bold text-text-primary">{stats.by_status.open}</p>
+                <p className="text-2xl font-bold text-text-primary">{stats.open}</p>
               </motion.div>
 
               <motion.div
@@ -205,7 +210,7 @@ export default function TicketsPage() {
                   <Clock className="w-4 h-4" />
                   <span className="text-sm font-medium">In Progress</span>
                 </div>
-                <p className="text-2xl font-bold text-text-primary">{stats.by_status.in_progress}</p>
+                <p className="text-2xl font-bold text-text-primary">{stats.in_progress}</p>
               </motion.div>
 
               <motion.div
@@ -218,7 +223,7 @@ export default function TicketsPage() {
                   <CheckCircle className="w-4 h-4" />
                   <span className="text-sm font-medium">Resolved</span>
                 </div>
-                <p className="text-2xl font-bold text-text-primary">{stats.by_status.resolved}</p>
+                <p className="text-2xl font-bold text-text-primary">{stats.resolved}</p>
               </motion.div>
 
               <motion.div
@@ -305,11 +310,6 @@ export default function TicketsPage() {
                         </div>
                         <h3 className="text-text-primary font-medium truncate">{ticket.title}</h3>
                         <p className="text-text-muted text-sm mt-1 line-clamp-2">{ticket.description}</p>
-                        {ticket.action_items && ticket.action_items.length > 0 && (
-                          <p className="text-xs text-accent-primary mt-2">
-                            {ticket.action_items.length} action item{ticket.action_items.length > 1 ? 's' : ''}
-                          </p>
-                        )}
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-xs text-text-muted">

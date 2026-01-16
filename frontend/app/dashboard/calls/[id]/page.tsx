@@ -20,6 +20,7 @@ import {
   Tag,
   MessageSquare,
   TrendingUp,
+  MessagesSquare,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
@@ -331,7 +332,7 @@ export default function CallDetailPage() {
   return (
     <AuthenticatedLayout>
     <div className="min-h-screen bg-bg-primary p-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <Link
           href="/dashboard"
@@ -352,7 +353,16 @@ export default function CallDetailPage() {
               <h1 className="text-2xl font-bold text-text-primary">Call Details</h1>
               <p className="text-text-muted">{new Date(call.started_at).toLocaleString()}</p>
             </div>
-            <SentimentBadge sentiment={analytics?.overall_sentiment} size="lg" />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push(`/chat?context=call&callId=${call.id}`)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-primary text-white hover:bg-accent-primary/90 transition-colors text-sm font-medium"
+              >
+                <MessagesSquare className="w-4 h-4" />
+                Chat about this call
+              </button>
+              <SentimentBadge sentiment={analytics?.overall_sentiment} size="lg" />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
@@ -407,70 +417,70 @@ export default function CallDetailPage() {
           </motion.div>
         )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Transcript */}
+        {/* Main Content - Transcript left, Analytics grid right */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Transcript - Narrower, scrollable */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="lg:col-span-2 bg-bg-secondary rounded-xl border border-border-primary p-6"
+            className="lg:col-span-2 bg-bg-secondary rounded-xl border border-border-primary p-4"
           >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
                 Transcript
               </h2>
               {call.recording_url && (
-                <button className="flex items-center text-accent-primary hover:text-accent-primary/80 text-sm">
-                  <Play className="w-4 h-4 mr-1" />
-                  Play Recording
+                <button className="flex items-center text-accent-primary hover:text-accent-primary/80 text-xs">
+                  <Play className="w-3 h-3 mr-1" />
+                  Play
                 </button>
               )}
             </div>
 
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
               {call.transcript && call.transcript.length > 0 ? (
                 call.transcript.map((message, i) => {
                   const isAgent = message.role === 'assistant' || message.role === 'bot' || message.role === 'ai'
                   return (
                     <div key={i} className={`flex ${isAgent ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`max-w-[80%] p-3 rounded-lg ${isAgent ? 'bg-accent-primary/10' : 'bg-bg-tertiary'}`}>
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className={`max-w-[90%] p-2 rounded-lg ${isAgent ? 'bg-accent-primary/10' : 'bg-bg-tertiary'}`}>
+                        <div className="flex items-center gap-1.5 mb-0.5">
                           {isAgent ? (
-                            <Bot className="w-4 h-4 text-accent-primary" />
+                            <Bot className="w-3 h-3 text-accent-primary" />
                           ) : (
-                            <User className="w-4 h-4 text-text-muted" />
+                            <User className="w-3 h-3 text-text-muted" />
                           )}
-                          <span className="text-xs font-medium text-text-muted uppercase">
+                          <span className="text-[10px] font-medium text-text-muted uppercase">
                             {isAgent ? 'Agent' : 'Customer'}
                           </span>
                           {message.timestamp !== undefined && (
-                            <span className="text-xs text-text-muted">{message.timestamp}s</span>
+                            <span className="text-[10px] text-text-muted">{message.timestamp}s</span>
                           )}
                         </div>
-                        <p className="text-sm text-text-primary">{message.content}</p>
+                        <p className="text-xs text-text-primary leading-relaxed">{message.content}</p>
                       </div>
                     </div>
                   )
                 })
               ) : (
-                <p className="text-text-muted text-center py-8">No transcript available</p>
+                <p className="text-text-muted text-center py-8 text-sm">No transcript available</p>
               )}
             </div>
           </motion.div>
 
-          {/* Analysis Panel */}
-          <div className="space-y-6">
-            {/* Summary */}
+          {/* Analysis Panel - Wider, 2-column grid */}
+          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
+            {/* Summary - spans full width */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+              className="md:col-span-2 bg-bg-secondary rounded-xl border border-border-primary p-4"
             >
-              <h2 className="text-lg font-semibold text-text-primary mb-3">Summary</h2>
-              <p className="text-text-muted text-sm">{analytics?.call_summary || 'No summary available'}</p>
+              <h2 className="text-sm font-semibold text-text-primary mb-2">Summary</h2>
+              <p className="text-text-muted text-xs leading-relaxed">{analytics?.call_summary || 'No summary available'}</p>
             </motion.div>
 
             {/* Customer Intent */}
@@ -478,10 +488,10 @@ export default function CallDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
-              className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+              className="bg-bg-secondary rounded-xl border border-border-primary p-4"
             >
-              <h2 className="text-lg font-semibold text-text-primary mb-3">Customer Intent</h2>
-              <p className="text-text-muted text-sm">{analytics?.customer_intent || 'Not identified'}</p>
+              <h2 className="text-sm font-semibold text-text-primary mb-2">Customer Intent</h2>
+              <p className="text-text-muted text-xs leading-relaxed">{analytics?.customer_intent || 'Not identified'}</p>
             </motion.div>
 
             {/* Key Topics */}
@@ -490,15 +500,44 @@ export default function CallDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+                className="bg-bg-secondary rounded-xl border border-border-primary p-4"
               >
-                <h2 className="text-lg font-semibold text-text-primary mb-3">Key Topics</h2>
-                <div className="flex flex-wrap gap-2">
+                <h2 className="text-sm font-semibold text-text-primary mb-2">Key Topics</h2>
+                <div className="flex flex-wrap gap-1.5">
                   {analytics.key_topics.map((topic, i) => (
-                    <span key={i} className="px-2 py-1 bg-bg-tertiary text-text-muted rounded-full text-sm">
+                    <span key={i} className="px-2 py-0.5 bg-bg-tertiary text-text-muted rounded-full text-xs">
                       {topic}
                     </span>
                   ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Agent Performance */}
+            {analytics?.agent_performance_score !== undefined && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="bg-bg-secondary rounded-xl border border-border-primary p-4"
+              >
+                <h2 className="text-sm font-semibold text-text-primary mb-2">Agent Performance</h2>
+                <div className="flex items-center">
+                  <div className="flex-1 h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        analytics.agent_performance_score >= 80
+                          ? 'bg-green-500'
+                          : analytics.agent_performance_score >= 60
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+                      }`}
+                      style={{ width: `${analytics.agent_performance_score}%` }}
+                    />
+                  </div>
+                  <span className="ml-2 font-semibold text-text-primary text-sm">
+                    {analytics.agent_performance_score.toFixed(0)}/100
+                  </span>
                 </div>
               </motion.div>
             )}
@@ -508,17 +547,17 @@ export default function CallDetailPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-                className="bg-yellow-500/10 rounded-xl border border-yellow-500/30 p-6"
+                transition={{ delay: 0.4 }}
+                className="bg-yellow-500/10 rounded-xl border border-yellow-500/30 p-4"
               >
-                <h2 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5" />
-                  Improvement Suggestions
+                <h2 className="text-sm font-semibold text-yellow-400 mb-2 flex items-center gap-1.5">
+                  <Lightbulb className="w-4 h-4" />
+                  Improvements
                 </h2>
-                <ul className="space-y-2">
+                <ul className="space-y-1">
                   {analytics.improvement_suggestions.map((suggestion, i) => (
-                    <li key={i} className="text-sm text-yellow-300/80 flex items-start">
-                      <span className="mr-2">•</span>
+                    <li key={i} className="text-xs text-yellow-300/80 flex items-start">
+                      <span className="mr-1.5">•</span>
                       {suggestion}
                     </li>
                   ))}
@@ -531,47 +570,18 @@ export default function CallDetailPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-accent-primary/10 rounded-xl border border-accent-primary/30 p-6"
+                transition={{ delay: 0.45 }}
+                className="bg-accent-primary/10 rounded-xl border border-accent-primary/30 p-4"
               >
-                <h2 className="text-lg font-semibold text-accent-primary mb-3">Action Items</h2>
-                <ul className="space-y-2">
+                <h2 className="text-sm font-semibold text-accent-primary mb-2">Action Items</h2>
+                <ul className="space-y-1">
                   {analytics.action_items.map((item, i) => (
-                    <li key={i} className="text-sm text-text-muted flex items-start">
-                      <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-accent-primary" />
+                    <li key={i} className="text-xs text-text-muted flex items-start">
+                      <CheckCircle className="w-3 h-3 mr-1.5 mt-0.5 flex-shrink-0 text-accent-primary" />
                       {item}
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-            )}
-
-            {/* Agent Performance */}
-            {analytics?.agent_performance_score !== undefined && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
-                className="bg-bg-secondary rounded-xl border border-border-primary p-6"
-              >
-                <h2 className="text-lg font-semibold text-text-primary mb-3">Agent Performance</h2>
-                <div className="flex items-center">
-                  <div className="flex-1 h-3 bg-bg-tertiary rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        analytics.agent_performance_score >= 80
-                          ? 'bg-green-500'
-                          : analytics.agent_performance_score >= 60
-                          ? 'bg-yellow-500'
-                          : 'bg-red-500'
-                      }`}
-                      style={{ width: `${analytics.agent_performance_score}%` }}
-                    />
-                  </div>
-                  <span className="ml-3 font-semibold text-text-primary">
-                    {analytics.agent_performance_score.toFixed(0)}/100
-                  </span>
-                </div>
               </motion.div>
             )}
 
@@ -581,17 +591,17 @@ export default function CallDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+                className="bg-bg-secondary rounded-xl border border-border-primary p-4"
               >
-                <h2 className="text-lg font-semibold text-text-primary mb-3">Customer Effort Score</h2>
+                <h2 className="text-sm font-semibold text-text-primary mb-2">Customer Effort</h2>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-2xl font-bold ${
+                  <span className={`text-xl font-bold ${
                     analytics.customer_effort_score <= 2 ? 'text-green-400' :
                     analytics.customer_effort_score === 3 ? 'text-yellow-400' : 'text-red-400'
                   }`}>
                     {analytics.customer_effort_score}/5
                   </span>
-                  <span className={`text-sm px-2 py-1 rounded ${
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
                     analytics.customer_effort_score <= 2 ? 'bg-green-500/20 text-green-400' :
                     analytics.customer_effort_score === 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
                   }`}>
@@ -599,23 +609,23 @@ export default function CallDetailPage() {
                      analytics.customer_effort_score === 3 ? 'Moderate' : 'High Effort'}
                   </span>
                 </div>
-                <div className="space-y-1 text-sm text-text-muted">
+                <div className="space-y-0.5 text-xs text-text-muted">
                   {analytics.customer_had_to_repeat && (
                     <p className="flex items-center gap-1">
-                      <span className="w-2 h-2 bg-orange-400 rounded-full" />
-                      Customer had to repeat information
+                      <span className="w-1.5 h-1.5 bg-orange-400 rounded-full" />
+                      Had to repeat info
                     </p>
                   )}
                   {analytics.transfer_count !== undefined && analytics.transfer_count > 0 && (
                     <p className="flex items-center gap-1">
-                      <span className="w-2 h-2 bg-orange-400 rounded-full" />
-                      Transferred {analytics.transfer_count} time{analytics.transfer_count > 1 ? 's' : ''}
+                      <span className="w-1.5 h-1.5 bg-orange-400 rounded-full" />
+                      {analytics.transfer_count} transfer{analytics.transfer_count > 1 ? 's' : ''}
                     </p>
                   )}
                   {analytics.was_escalated && (
                     <p className="flex items-center gap-1">
-                      <span className="w-2 h-2 bg-red-400 rounded-full" />
-                      Call was escalated{analytics.escalation_reason ? `: ${analytics.escalation_reason}` : ''}
+                      <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
+                      Escalated
                     </p>
                   )}
                 </div>
@@ -631,44 +641,36 @@ export default function CallDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55 }}
-                className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+                className="bg-bg-secondary rounded-xl border border-border-primary p-4"
               >
-                <h2 className="text-lg font-semibold text-text-primary mb-3">Talk Time Breakdown</h2>
-                <div className="space-y-3">
+                <h2 className="text-sm font-semibold text-text-primary mb-2">Talk Time</h2>
+                <div className="space-y-2">
                   {analytics.handle_time_breakdown.agent_talk_percentage !== undefined && (
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
+                      <div className="flex justify-between text-xs mb-0.5">
                         <span className="text-text-muted">Agent</span>
                         <span className="text-text-primary">{analytics.handle_time_breakdown.agent_talk_percentage?.toFixed(0)}%</span>
                       </div>
-                      <div className="h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${analytics.handle_time_breakdown.agent_talk_percentage}%` }}
-                        />
+                      <div className="h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${analytics.handle_time_breakdown.agent_talk_percentage}%` }} />
                       </div>
                     </div>
                   )}
                   {analytics.handle_time_breakdown.customer_talk_percentage !== undefined && (
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
+                      <div className="flex justify-between text-xs mb-0.5">
                         <span className="text-text-muted">Customer</span>
                         <span className="text-text-primary">{analytics.handle_time_breakdown.customer_talk_percentage?.toFixed(0)}%</span>
                       </div>
-                      <div className="h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-purple-500 rounded-full"
-                          style={{ width: `${analytics.handle_time_breakdown.customer_talk_percentage}%` }}
-                        />
+                      <div className="h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500 rounded-full" style={{ width: `${analytics.handle_time_breakdown.customer_talk_percentage}%` }} />
                       </div>
                     </div>
                   )}
                   {analytics.handle_time_breakdown.hold_time_seconds !== undefined && analytics.handle_time_breakdown.hold_time_seconds > 0 && (
-                    <div className="pt-2 border-t border-border-primary">
-                      <p className="text-sm text-text-muted">
-                        Hold Time: <span className="text-text-primary font-medium">{formatDuration(analytics.handle_time_breakdown.hold_time_seconds)}</span>
-                      </p>
-                    </div>
+                    <p className="text-xs text-text-muted pt-1 border-t border-border-primary">
+                      Hold: <span className="text-text-primary">{formatDuration(analytics.handle_time_breakdown.hold_time_seconds)}</span>
+                    </p>
                   )}
                 </div>
               </motion.div>
@@ -683,43 +685,37 @@ export default function CallDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="bg-bg-secondary rounded-xl border border-border-primary p-6"
+                className="bg-bg-secondary rounded-xl border border-border-primary p-4"
               >
-                <h2 className="text-lg font-semibold text-text-primary mb-3">Conversation Quality</h2>
-                <div className="grid grid-cols-2 gap-3">
+                <h2 className="text-sm font-semibold text-text-primary mb-2">Conversation Quality</h2>
+                <div className="grid grid-cols-2 gap-2">
                   {analytics.conversation_quality.clarity_score !== undefined && (
-                    <div className="text-center p-2 bg-bg-tertiary rounded-lg">
-                      <p className={`text-xl font-bold ${
+                    <div className="text-center p-1.5 bg-bg-tertiary rounded-lg">
+                      <p className={`text-lg font-bold ${
                         analytics.conversation_quality.clarity_score >= 80 ? 'text-green-400' :
                         analytics.conversation_quality.clarity_score >= 60 ? 'text-yellow-400' : 'text-red-400'
                       }`}>
                         {analytics.conversation_quality.clarity_score.toFixed(0)}
                       </p>
-                      <p className="text-xs text-text-muted">Clarity</p>
+                      <p className="text-[10px] text-text-muted">Clarity</p>
                     </div>
                   )}
                   {analytics.conversation_quality.empathy_phrases_count !== undefined && (
-                    <div className="text-center p-2 bg-bg-tertiary rounded-lg">
-                      <p className="text-xl font-bold text-pink-400">
-                        {analytics.conversation_quality.empathy_phrases_count}
-                      </p>
-                      <p className="text-xs text-text-muted">Empathy Phrases</p>
+                    <div className="text-center p-1.5 bg-bg-tertiary rounded-lg">
+                      <p className="text-lg font-bold text-pink-400">{analytics.conversation_quality.empathy_phrases_count}</p>
+                      <p className="text-[10px] text-text-muted">Empathy</p>
                     </div>
                   )}
                   {analytics.conversation_quality.jargon_usage_count !== undefined && (
-                    <div className="text-center p-2 bg-bg-tertiary rounded-lg">
-                      <p className="text-xl font-bold text-yellow-400">
-                        {analytics.conversation_quality.jargon_usage_count}
-                      </p>
-                      <p className="text-xs text-text-muted">Jargon Used</p>
+                    <div className="text-center p-1.5 bg-bg-tertiary rounded-lg">
+                      <p className="text-lg font-bold text-yellow-400">{analytics.conversation_quality.jargon_usage_count}</p>
+                      <p className="text-[10px] text-text-muted">Jargon</p>
                     </div>
                   )}
                   {analytics.conversation_quality.avg_agent_response_time_seconds !== undefined && (
-                    <div className="text-center p-2 bg-bg-tertiary rounded-lg">
-                      <p className="text-xl font-bold text-text-primary">
-                        {analytics.conversation_quality.avg_agent_response_time_seconds.toFixed(1)}s
-                      </p>
-                      <p className="text-xs text-text-muted">Avg Response</p>
+                    <div className="text-center p-1.5 bg-bg-tertiary rounded-lg">
+                      <p className="text-lg font-bold text-text-primary">{analytics.conversation_quality.avg_agent_response_time_seconds.toFixed(1)}s</p>
+                      <p className="text-[10px] text-text-muted">Avg Response</p>
                     </div>
                   )}
                 </div>
@@ -735,30 +731,28 @@ export default function CallDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.65 }}
-                className="bg-cyan-500/10 rounded-xl border border-cyan-500/30 p-6"
+                className="bg-cyan-500/10 rounded-xl border border-cyan-500/30 p-4"
               >
-                <h2 className="text-lg font-semibold text-cyan-400 mb-3">Competitive Intelligence</h2>
+                <h2 className="text-sm font-semibold text-cyan-400 mb-2">Competitive Intel</h2>
                 {analytics.competitive_intelligence.competitors_mentioned && analytics.competitive_intelligence.competitors_mentioned.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-xs text-text-muted mb-1">Competitors Mentioned:</p>
+                  <div className="mb-2">
+                    <p className="text-[10px] text-text-muted mb-1">Competitors:</p>
                     <div className="flex flex-wrap gap-1">
                       {analytics.competitive_intelligence.competitors_mentioned.map((comp, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded text-xs">
-                          {comp}
-                        </span>
+                        <span key={i} className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 rounded text-[10px]">{comp}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {analytics.competitive_intelligence.switching_intent_detected && (
-                  <p className="text-sm text-red-400 flex items-center gap-1">
-                    <AlertTriangle className="w-4 h-4" />
-                    Switching intent detected
+                  <p className="text-xs text-red-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Switching intent
                   </p>
                 )}
                 {analytics.competitive_intelligence.price_sensitivity_level && analytics.competitive_intelligence.price_sensitivity_level !== 'none' && (
-                  <p className="text-sm text-text-muted mt-1">
-                    Price Sensitivity: <span className="capitalize text-yellow-400">{analytics.competitive_intelligence.price_sensitivity_level}</span>
+                  <p className="text-xs text-text-muted">
+                    Price: <span className="capitalize text-yellow-400">{analytics.competitive_intelligence.price_sensitivity_level}</span>
                   </p>
                 )}
               </motion.div>
@@ -774,49 +768,43 @@ export default function CallDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className="bg-green-500/10 rounded-xl border border-green-500/30 p-6"
+                className="bg-green-500/10 rounded-xl border border-green-500/30 p-4"
               >
-                <h2 className="text-lg font-semibold text-green-400 mb-3">Product Insights</h2>
+                <h2 className="text-sm font-semibold text-green-400 mb-2">Product Insights</h2>
                 {analytics.product_analytics.products_discussed && analytics.product_analytics.products_discussed.length > 0 && (
-                  <div className="mb-2">
-                    <p className="text-xs text-text-muted mb-1">Products Discussed:</p>
+                  <div className="mb-1.5">
+                    <p className="text-[10px] text-text-muted mb-0.5">Products:</p>
                     <div className="flex flex-wrap gap-1">
                       {analytics.product_analytics.products_discussed.map((prod, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
-                          {prod}
-                        </span>
+                        <span key={i} className="px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded text-[10px]">{prod}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {analytics.product_analytics.features_requested && analytics.product_analytics.features_requested.length > 0 && (
-                  <div className="mb-2">
-                    <p className="text-xs text-text-muted mb-1">Features Requested:</p>
+                  <div className="mb-1.5">
+                    <p className="text-[10px] text-text-muted mb-0.5">Requested:</p>
                     <div className="flex flex-wrap gap-1">
                       {analytics.product_analytics.features_requested.map((feat, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
-                          {feat}
-                        </span>
+                        <span key={i} className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[10px]">{feat}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {analytics.product_analytics.features_problematic && analytics.product_analytics.features_problematic.length > 0 && (
-                  <div className="mb-2">
-                    <p className="text-xs text-text-muted mb-1">Problematic Features:</p>
+                  <div className="mb-1.5">
+                    <p className="text-[10px] text-text-muted mb-0.5">Issues:</p>
                     <div className="flex flex-wrap gap-1">
                       {analytics.product_analytics.features_problematic.map((feat, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
-                          {feat}
-                        </span>
+                        <span key={i} className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded text-[10px]">{feat}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {analytics.product_analytics.upsell_opportunity_detected && (
-                  <p className="text-sm text-green-400 flex items-center gap-1 mt-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Upsell opportunity detected
+                  <p className="text-xs text-green-400 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Upsell opportunity
                   </p>
                 )}
               </motion.div>

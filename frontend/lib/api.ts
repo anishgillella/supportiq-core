@@ -98,16 +98,117 @@ class ApiClient {
   }
 
   // Chat endpoint
-  async chat(token: string, message: string, conversationId?: string) {
+  async chat(token: string, message: string, conversationId?: string, attachedTicketIds?: string[]) {
     return this.request<{
       response: string
       conversation_id: string
       sources: Array<{ title: string; chunk: string }>
+      tool_calls?: Array<{ name: string; result: Record<string, unknown> }>
+      created_tickets?: Array<{
+        id: string
+        ticket_number: number
+        title: string
+        status: string
+        priority: string
+      }>
+      referenced_tickets?: Array<{
+        id: string
+        ticket_number: number
+        title: string
+        status: string
+        priority: string
+      }>
     }>('/chat', {
       method: 'POST',
       token,
-      body: JSON.stringify({ message, conversation_id: conversationId }),
+      body: JSON.stringify({
+        message,
+        conversation_id: conversationId,
+        attached_ticket_ids: attachedTicketIds,
+      }),
     })
+  }
+
+  // Chat conversations
+  async listConversations(token: string) {
+    return this.request<{
+      conversations: Array<{
+        id: string
+        title: string
+        created_at: string
+        updated_at: string
+        attached_ticket_ids: string[]
+      }>
+    }>('/chat/conversations', { token })
+  }
+
+  async getConversation(token: string, conversationId: string) {
+    return this.request<{
+      id: string
+      title: string
+      messages: Array<{
+        role: string
+        content: string
+        timestamp: string
+        sources?: Array<{ title: string; chunk: string }>
+        tool_calls?: Array<{ name: string; result: Record<string, unknown> }>
+      }>
+      attached_ticket_ids: string[]
+      created_at: string
+      updated_at: string
+    }>(`/chat/conversations/${conversationId}`, { token })
+  }
+
+  async deleteConversation(token: string, conversationId: string) {
+    return this.request<{ success: boolean }>(`/chat/conversations/${conversationId}`, {
+      method: 'DELETE',
+      token,
+    })
+  }
+
+  async updateConversationTickets(token: string, conversationId: string, ticketIds: string[]) {
+    return this.request<{ success: boolean; attached_ticket_ids: string[] }>(
+      `/chat/conversations/${conversationId}/tickets`,
+      {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify(ticketIds),
+      }
+    )
+  }
+
+  async generateConversationTitle(token: string, conversationId: string) {
+    return this.request<{ title: string; generated: boolean }>(
+      `/chat/conversations/${conversationId}/generate-title`,
+      {
+        method: 'POST',
+        token,
+      }
+    )
+  }
+
+  // Ticket search for chat picker
+  async searchTicketsForChat(token: string, query: string, status?: string, limit?: number) {
+    const params = new URLSearchParams({ q: query })
+    if (status) params.set('status', status)
+    if (limit) params.set('limit', limit.toString())
+
+    return this.request<{
+      tickets: Array<{
+        id: string
+        ticket_number: number
+        title: string
+        description: string | null
+        status: string
+        priority: string
+        category: string | null
+        created_at: string
+        updated_at: string
+        user_id: string | null
+        source: string
+      }>
+      count: number
+    }>(`/chat/tickets/search?${params}`, { token })
   }
 
   async login(email: string, password: string) {
